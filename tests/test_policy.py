@@ -8,7 +8,7 @@ from dramafever.premium.services.policy.tree import (
     LeafPolicyNode, DictPolicyNode, UnknownPolicyNode, Value
 )
 from dramafever.premium.services.policy import (
-    Policy,
+    Partial,
     set_value, select, const, path, set_path, with_value,
     check, do, policies, regarding, given, fail, match, attempt,
     permit_values, define_as
@@ -42,7 +42,7 @@ class PolicyTestCase(TestCase):
         policy["foo"] = DictPolicyNode()
         policy["foo"]["bar"] = LeafPolicyNode(Value(5))
 
-        item = Policy(policy)
+        item = Partial(policy)
 
         # select existing item
         path = "/foo/bar"
@@ -68,7 +68,7 @@ class PolicyTestCase(TestCase):
         policy["foo"] = DictPolicyNode()
         policy["foo"]["bar"] = LeafPolicyNode(Value(5))
 
-        item = Policy(policy)
+        item = Partial(policy)
 
         path = "/foo/bar"
         value, new_item = item.select(path, set_path=False)
@@ -80,7 +80,7 @@ class PolicyBuilderTestCase(TestCase):
     def test_set_valueI(self):
         func = policyI(set_valueI(5))
 
-        _, item = func(Policy()).getValue()
+        _, item = func(Partial()).getValue()
 
         value, _ = item.select("")
         self.assertEqual(LeafPolicyNode(Value(5)), value)
@@ -89,14 +89,14 @@ class PolicyBuilderTestCase(TestCase):
         func = policyI(
             regardingI("/foo", doI(set_valueI(5)))
         )
-        _, item = func(Policy()).getValue()
+        _, item = func(Partial()).getValue()
         value, _ = item.select("/foo")
         self.assertEqual(LeafPolicyNode(Value(5)), value)
 
         func = policyI(
             regardingI("/fields/foo", doI(set_valueI(5)))
         )
-        _, item = func(Policy()).getValue()
+        _, item = func(Partial()).getValue()
         value, _ = item.select("/fields/foo")
         self.assertEqual(LeafPolicyNode(Value(5)), value)
 
@@ -104,7 +104,7 @@ class PolicyBuilderTestCase(TestCase):
         func = policyI(
             regardingI("/fields/foo", doI(set_valueI(5), set_valueI(6)))
         )
-        _, item = func(Policy()).getValue()
+        _, item = func(Partial()).getValue()
         value, _ = item.select("/fields/foo")
         self.assertEqual(LeafPolicyNode(Value(6)), value)
 
@@ -118,7 +118,7 @@ class PolicyBuilderTestCase(TestCase):
                 ))
             )
         )
-        _, policy = func(Policy()).getValue()
+        _, policy = func(Partial()).getValue()
 
         foo, _ = policy.select("/fields/foo")
         bar, _ = policy.select("/fields/bar")
@@ -131,7 +131,7 @@ class PolicyBuilderTestCase(TestCase):
            regardingM("/fields/foo", doM(set_valueM("foo"))),
         )
 
-        maybe = func( Policy() )
+        maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, policy = maybe.getValue()
         foo, _ = policy.select("/fields/foo")
@@ -144,7 +144,7 @@ class PolicyBuilderTestCase(TestCase):
            regardingM("/fields/foo", doM(set_valueM("bar"))),
         )
 
-        maybe = func( Policy() )
+        maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, policy = maybe.getValue()
         foo, _ = policy.select("/fields/foo")
@@ -160,7 +160,7 @@ class PolicyBuilderTestCase(TestCase):
            )
         )
 
-        maybe = func( Policy() )
+        maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, policy = maybe.getValue()
         foo, _ = policy.select("/fields/foo")
@@ -178,7 +178,7 @@ class PolicyBuilderTestCase(TestCase):
             )
         )
 
-        maybe = func( Policy() )
+        maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, policy = maybe.getValue()
         foo, _ = policy.select("/fields/foo")
@@ -198,7 +198,7 @@ class PolicyBuilderTestCase(TestCase):
             regardingM("/fields/bar", doM(matchM("foobar")))
         )
 
-        maybe = func( Policy() )
+        maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, policy = maybe.getValue()
         foo, _ = policy.select("/fields/foo")
@@ -212,7 +212,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", do(set_value("foo")))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -235,7 +235,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/bar", do(match("foobar")))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -253,7 +253,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/bar", do(match("barfu")))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -265,7 +265,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", do(permit_values(["foo", "bar"]))),
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -280,7 +280,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", do(match("foo")))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -295,7 +295,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", do(permit_values(["foo", "bar"])))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -317,7 +317,7 @@ class PolicyBuilderTestCase(TestCase):
             ))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
 
         self.assertTrue(isinstance(ps, List))
 
@@ -337,7 +337,7 @@ class PolicyBuilderTestCase(TestCase):
             ))
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
 
         self.assertTrue(isinstance(ps, List))
 
@@ -351,12 +351,12 @@ class PolicyBuilderTestCase(TestCase):
                 do(check(lambda: value) >> set_value)
             )
 
-        ps = get_policies(5)( Policy() )
+        ps = get_policies(5)( Partial() )
         results = ps.getValue()
         values = [r[1].select("/fields/foo")[0].value for r in results]
         self.assertEqual([5], values)
 
-        ps = get_policies(1000)( Policy() )
+        ps = get_policies(1000)( Partial() )
         results = ps.getValue()
         values = [r[1].select("/fields/foo")[0].value for r in results]
         self.assertEqual([1000], values)
@@ -370,7 +370,7 @@ class PolicyBuilderTestCase(TestCase):
             )
         )
 
-        ps = func( Policy() )
+        ps = func( Partial() )
 
         self.assertTrue(isinstance(ps, List))
 

@@ -1,5 +1,5 @@
 """
-`dramafever.premium.services.policy` module
+`dramafever.premium.services.policy.partial` module
 
 This module is used to provide the specific data structure used in the
 stateful computation of command policy.
@@ -8,7 +8,7 @@ The data structure has two parts:
 - a root policy node
 - a pointer to a "current scope"
 
-Operations are provided on Policy that allow the manipulation of either
+Operations are provided on Partial that allow the manipulation of either
 the policy tree or the pointer, or both.
 """
 from jsonpointer import JsonPointer
@@ -17,7 +17,7 @@ from dramafever.premium.services.policy.tree import (
     PolicyNode, UnknownPolicyNode, LeafPolicyNode, Value
 )
 
-class Policy(object):
+class Partial(object):
     def __init__(self, root=None, path=None):
         if root is None:
             root = UnknownPolicyNode()
@@ -29,7 +29,7 @@ class Policy(object):
 
     @staticmethod
     def from_obj(obj):
-        return Policy(
+        return Partial(
             root=PolicyNode.from_obj(obj)
         )
 
@@ -57,7 +57,7 @@ class Policy(object):
             new_path = old_path
 
         node, new_root = self._root.select(selected_path)
-        return node, Policy(new_root, new_path)
+        return node, Partial(new_root, new_path)
 
     def set_path(self, path=None):
         if path is None:
@@ -69,7 +69,7 @@ class Policy(object):
 
     def define_as(self, definition):
         return (
-            definition, Policy(
+            definition, Partial(
                 self._pointer.set(
                     self._root, LeafPolicyNode(definition), inplace=False
                 ),
@@ -79,7 +79,7 @@ class Policy(object):
 
     def set_value(self, value):
         return (
-            value, Policy(
+            value, Partial(
                 self._pointer.set(
                     self._root, LeafPolicyNode(Value(value)), inplace=False
                 ),
@@ -89,7 +89,7 @@ class Policy(object):
 
     def set_node(self, node):
         return (
-            node, Policy(
+            node, Partial(
                 self._pointer.set(self._root, node, inplace=False),
                 path=self._pointer.parts
             )
@@ -106,5 +106,5 @@ class Policy(object):
 
 
     def __repr__(self):
-        return "Policy(root={}, path={})".format(self._root, self.path)
+        return "Partial(root={}, path={})".format(self._root, self.path)
 
