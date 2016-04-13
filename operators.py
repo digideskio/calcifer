@@ -25,9 +25,9 @@ def make_set_value(m):
         the node with a LeafPolicyNode
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit(policy.set_value(value))
-        return for_policy
+        def for_partial(partial):
+            return m.unit(partial.set_value(value))
+        return for_partial
     return set_value
 set_value = make_set_value(List)
 
@@ -39,9 +39,9 @@ def make_select(m):
         sets the scope to that selector
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit(policy.select(selector, set_path=set_path))
-        return for_policy
+        def for_partial(partial):
+            return m.unit(partial.select(selector, set_path=set_path))
+        return for_partial
     return select
 select = make_select(List)
 
@@ -67,9 +67,9 @@ def make_path(m):
         Retrieves the path for the current scope
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit( (policy.path, policy) )
-        return for_policy
+        def for_partial(partial):
+            return m.unit( (partial.path, partial) )
+        return for_partial
     return path
 path = make_path(List)
 
@@ -80,9 +80,9 @@ def make_set_path(m):
         Sets the path for the current scope
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit( policy.set_path(new_path) )
-        return for_policy
+        def for_partial(partial):
+            return m.unit( partial.set_path(new_path) )
+        return for_partial
     return set_path
 set_path = make_set_path(List)
 
@@ -92,9 +92,9 @@ def make_define_as(m):
         Sets the path for the current scope
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit( policy.define_as(definition) )
-        return for_policy
+        def for_partial(partial):
+            return m.unit( partial.define_as(definition) )
+        return for_partial
     return define_as
 define_as = make_define_as(List)
 
@@ -106,9 +106,9 @@ def make_with_value(m):
         """
         def for_node(node):
             @stateT(m)
-            def for_policy(policy):
-                return func(node.value)(policy)
-            return for_policy
+            def for_partial(partial):
+                return func(node.value)(partial)
+            return for_partial
         return for_node
     return with_value
 with_value = make_with_value(List)
@@ -119,12 +119,12 @@ def make_check(m):
         """
         Given a function that takes no arguments, returns a
         policy rule that runs the function and returns the result
-        and an unchanged policy
+        and an unchanged partial
         """
         @stateT(m)
-        def for_policy(policy):
-            return m.unit( (func(), policy) )
-        return for_policy
+        def for_partial(partial):
+            return m.unit( (func(), partial) )
+        return for_partial
     return check
 check = make_check(List)
 
@@ -262,9 +262,9 @@ given = make_given(List)
 def make_fail(m):
     def fail():
         @stateT(m)
-        def for_policy(policy):
+        def for_partial(partial):
             return m.mzero()
-        return for_policy
+        return for_partial
     return fail
 fail = make_fail(List)
 
@@ -274,20 +274,20 @@ def make_match(m):
         """
         Given an expected value, selects the currently scoped node and ensures
         it matches expected. If the match results in a new node definition,
-        the policy is updated accordingly.
+        the partial is updated accordingly.
 
         For non-matches, returns a monadic zero (e.g. if we're building a list
-        of policies, this would collapse from [policy] to [])
+        of policies, this would collapse from [partial] to [])
         """
         @stateT(m)
-        def for_policy(policy):
-            matches, new_policy = policy.match(compare_to)
+        def for_partial(partial):
+            matches, new_partial = partial.match(compare_to)
 
             if matches:
-                return m.unit( (compare_to, new_policy) )
+                return m.unit( (compare_to, new_partial) )
 
             return m.mzero()
-        return for_policy
+        return for_partial
     return match
 match = make_match(List)
 
@@ -298,20 +298,20 @@ def make_permit_values(m):
 
     def permit_values(permitted_values):
         """
-        Given a list of allowed values, matches the current policy against
+        Given a list of allowed values, matches the current partial against
         each, forking the non-deterministic computation.
         """
         @stateT(m)
-        def for_policy(policy):
+        def for_partial(partial):
             def for_value(value):
-                return unit(policy) >> match(value)
+                return unit(partial) >> match(value)
 
             monad = m.mzero()
             for value in permitted_values:
                 monad = monad.mplus(for_value(value))
 
             return monad
-        return for_policy
+        return for_partial
     return permit_values
 permit_values = make_permit_values(List)
 
@@ -323,8 +323,8 @@ def make_attempt(m):
 
     def attempt(*rules):
         """
-        Keeping track of the value and policy it receives,
-        if the result of do(*rules) on the policy is mzero,
+        Keeping track of the value and partial it receives,
+        if the result of do(*rules) on the partial is mzero,
         then `attempt` returns `unit( (initial_value, initial_policy) )`
         otherwise, `attempt` returns the result of the rules.
 
@@ -333,13 +333,13 @@ def make_attempt(m):
         """
         def for_any(value):
             @stateT(m)
-            def for_policy(policy):
-                initial = unit( (value, policy) )
-                result = do(*rules)(value)(policy)
+            def for_partial(partial):
+                initial = unit( (value, partial) )
+                result = do(*rules)(value)(partial)
                 if result == mzero():
                     return initial
                 return result
-            return for_policy
+            return for_partial
         return for_any
     return attempt
 attempt = make_attempt(List)

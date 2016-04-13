@@ -98,9 +98,9 @@ class Partial(object):
     def match(self, value):
         node, new_self = self.select("")
         matches, new_node = node.match(value)
-        _, new_policy = new_self.set_node(new_node)
+        _, new_partial = new_self.set_node(new_node)
         if matches:
-            return True, new_policy
+            return True, new_partial
 
         return False, self
 

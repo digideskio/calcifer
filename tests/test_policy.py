@@ -118,10 +118,10 @@ class PolicyBuilderTestCase(TestCase):
                 ))
             )
         )
-        _, policy = func(Partial()).getValue()
+        _, partial = func(Partial()).getValue()
 
-        foo, _ = policy.select("/fields/foo")
-        bar, _ = policy.select("/fields/bar")
+        foo, _ = partial.select("/fields/foo")
+        bar, _ = partial.select("/fields/bar")
         self.assertEqual("foo", foo.value)
         self.assertEqual("foobar", bar.value)
 
@@ -133,8 +133,8 @@ class PolicyBuilderTestCase(TestCase):
 
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
-        _, policy = maybe.getValue()
-        foo, _ = policy.select("/fields/foo")
+        _, partial = maybe.getValue()
+        foo, _ = partial.select("/fields/foo")
 
         self.assertEqual(LeafPolicyNode(Value("foo")), foo)
 
@@ -146,8 +146,8 @@ class PolicyBuilderTestCase(TestCase):
 
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
-        _, policy = maybe.getValue()
-        foo, _ = policy.select("/fields/foo")
+        _, partial = maybe.getValue()
+        foo, _ = partial.select("/fields/foo")
 
         self.assertEqual(LeafPolicyNode(Value("bar")), foo)
 
@@ -162,8 +162,8 @@ class PolicyBuilderTestCase(TestCase):
 
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
-        _, policy = maybe.getValue()
-        foo, _ = policy.select("/fields/foo")
+        _, partial = maybe.getValue()
+        foo, _ = partial.select("/fields/foo")
 
         self.assertEqual(LeafPolicyNode(Value("bar")), foo)
 
@@ -180,9 +180,9 @@ class PolicyBuilderTestCase(TestCase):
 
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
-        _, policy = maybe.getValue()
-        foo, _ = policy.select("/fields/foo")
-        bar, _ = policy.select("/fields/bar")
+        _, partial = maybe.getValue()
+        foo, _ = partial.select("/fields/foo")
+        bar, _ = partial.select("/fields/bar")
         self.assertEqual("foo", foo.value)
         self.assertEqual("foobar", bar.value)
 
@@ -200,9 +200,9 @@ class PolicyBuilderTestCase(TestCase):
 
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
-        _, policy = maybe.getValue()
-        foo, _ = policy.select("/fields/foo")
-        bar, _ = policy.select("/fields/bar")
+        _, partial = maybe.getValue()
+        foo, _ = partial.select("/fields/foo")
+        bar, _ = partial.select("/fields/bar")
         self.assertEqual("foo", foo.value)
         self.assertEqual("foobar", bar.value)
 
@@ -218,9 +218,9 @@ class PolicyBuilderTestCase(TestCase):
         results = ps.getValue()
         self.assertEqual(1, len(results))
 
-        _, policy = results[0]
+        _, partial = results[0]
 
-        foo, _ = policy.select("/fields/foo")
+        foo, _ = partial.select("/fields/foo")
         self.assertEqual(LeafPolicyNode(Value("foo")), foo)
 
     def test_match(self):
