@@ -375,3 +375,12 @@ class PolicyBuilderTestCase(TestCase):
         values = [r[1].select("/fields/foo")[0].value for r in results]
 
         self.assertEqual([5], values)
+
+    def test_regarding_return(self):
+        func = regarding("/foo")
+        ps = func( Partial.from_obj({"foo": 5}) )
+
+        results = ps.getValue()
+        values = [r[0] for r in results]
+
+        self.assertEqual([5], values)
