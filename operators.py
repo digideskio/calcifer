@@ -161,7 +161,8 @@ def make_policies(m):
         applies each in turn, keeping scope constant for each. (By resetting
         the path each time)
         """
-        def op_step(rule):
+        @policy_rule_func(m)
+        def policy_step(rule):
             return (
                 path() >> (lambda old_path:
                 unit(None) >>
@@ -171,7 +172,7 @@ def make_policies(m):
 
         op = unit(None)
         for rule in rules:
-            op = op >> op_step(rule)
+            op = op >> policy_step(rule)
 
         return op
     return policies
@@ -197,7 +198,8 @@ def make_regarding(m):
         In addition, regarding checks the current scope and restores it when
         it's done.
         """
-        def op_step(rule_func):
+        @policy_rule_func(m)
+        def regarding_step(rule_func):
             return (
                 path() >> (lambda old_path:
                 select(selector, set_path=True) >> (lambda node:
@@ -210,7 +212,7 @@ def make_regarding(m):
         if rule_funcs:
             op = unit(None)
             for rule_func in rule_funcs:
-                op = op >> op_step(rule_func)
+                op = op >> regarding_step(rule_func)
         else:
             op = select(selector, set_path=False) >> unit_value
 
@@ -241,7 +243,8 @@ def make_given(m):
         (`given` is identical to `regarding` except that the provided
         rule_funcs will run in the pre-existing scope)
         """
-        def op_step(rule_func):
+        @policy_rule_func(m)
+        def given_step(rule_func):
             return (
                 path() >> (lambda old_path:
                 select(selector, set_path=False) >>
@@ -251,7 +254,7 @@ def make_given(m):
 
         op = unit(None)
         for rule_func in rule_funcs:
-            op = op >> op_step(rule_func)
+            op = op >> given_step(rule_func)
 
         return op
 
