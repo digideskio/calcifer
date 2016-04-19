@@ -31,6 +31,23 @@ def make_unit(m):
 unit = make_unit(List)
 
 
+def make_unit_value(m):
+    @policy_rule_func(m)
+    def unit_value(node):
+        """
+        Given a node (often returned as monadic result), return
+        the value for the node.
+        """
+        def for_partial(partial):
+            if hasattr(node, 'value'):
+                return m.unit((node.value, partial))
+            else:
+                return m.mzero()
+        return for_partial
+    return unit_value
+unit_value = make_unit_value(List)
+
+
 def make_set_value(m):
     @policy_rule_func(m)
     def set_value(value):
