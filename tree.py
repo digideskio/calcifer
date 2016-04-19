@@ -12,7 +12,7 @@ to specific values or generate a template for procuring the value.
 
 from abc import ABCMeta, abstractmethod
 
-from dramafever.premium.commands.definitions import Value
+from dramafever.premium.services.policy.definitions import Value
 
 class PolicyNode:
     """
