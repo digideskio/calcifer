@@ -22,8 +22,10 @@ one way, and thus, the command policy for a given request may indeed return
 any number of templates, including zero. This is realized as:
     runStateT(initial_state) -> [(computation_result_value, new_state)]
 """
+import inspect
 from pymonad import Monad
 
+from dramafever.premium.services.policy import asts
 
 def stateT(m):
     class StateT(Monad):
@@ -86,3 +88,104 @@ class Identity(Monad):
 
     def amap(self, function):
         return super(Identity, self).amap(function)
+
+
+class BasePolicyRule(object):
+    pass
+
+
+def policyM(m):
+    class PolicyRule(BasePolicyRule, stateT(m)):
+        def __init__(
+            self, for_partial, context=None,
+            ast=None,
+        ):
+
+            if ast is None:
+                ast = getattr(for_partial, 'ast', None)
+
+            if context is not None:
+                ast = context.with_result(ast)
+
+            self.ast = ast
+            super(PolicyRule, self).__init__(for_partial)
+
+        def __repr__(self):
+            if self.ast:
+                return "<PolicyRule: {}>".format(repr(self.ast))
+            return super(PolicyRule, self).__repr__()
+
+        def bind(self, rule_func):
+            if not isinstance(rule_func, BasePolicyRuleFunc):
+                rule_func = policy_rule_func(m)(rule_func)
+
+            try:
+                binding = super(PolicyRule, self).bind(rule_func)
+            except:
+                pp.pprint((
+                    "error binding `{}` to rule_func `{}`"
+                ).format(self, rule_func))
+                raise
+
+            new_ast = asts.Binding(self.ast, rule_func.ast)
+
+            return PolicyRule(
+                binding.value, ast=new_ast
+            )
+
+        def __call__(self, partial):
+            try:
+                result = super(PolicyRule, self).__call__(partial)
+            except:
+                print "error evaluating policy rule: ",
+                pp.pprint(self.ast)
+                raise
+            return result
+
+
+    return PolicyRule
+
+class BasePolicyRuleFunc(object):
+    pass
+
+def get_call_repr(func_name, *args, **kwargs):
+    return repr(asts.PolicyRuleFuncCall(func_name, args, kwargs))
+
+def policy_rule_func(m, rule_func_name=None):
+    def decorator(rule_func):
+        class PolicyRuleFunc(BasePolicyRuleFunc):
+            def __init__(self, rule_func, rule_func_name=None):
+                if rule_func_name is None:
+                    if hasattr(rule_func, 'ast'):
+                        rule_func_name = repr(rule_func.ast)
+                    else:
+                        rule_func_name = rule_func.__name__
+                if rule_func_name == '<lambda>':
+                    rule_func_name = (
+                        '<lambda {}:>'
+                    ).format(
+                        ", ".join(inspect.getargspec(rule_func).args)
+                    )
+
+                self.ast = asts.PolicyRuleFunc(rule_func_name)
+                self.rule_func = rule_func
+                self.rule_func_name = rule_func_name
+
+            def __call__(self, *args, **kwargs):
+                rule = self.rule_func(*args, **kwargs)
+
+                func_call_ast = asts.PolicyRuleFuncCall(
+                    self.ast, args, kwargs
+                )
+                return policyM(m)(
+                    rule, context=func_call_ast
+                )
+
+            def __repr__(self):
+                return "<PolicyRuleFunc {}>".format(self.rule_func_name)
+
+        return PolicyRuleFunc(rule_func, rule_func_name)
+    return decorator
+
+PolicyRule = BasePolicyRule
+PolicyRuleFunc = BasePolicyRuleFunc
