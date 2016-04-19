@@ -117,6 +117,15 @@ class Partial(object):
 
         return False, self
 
+    def push_context(self, context):
+        stack = self.select("/context")[0].value
+        new_stack = stack + [context]
+        return self.set_value(new_stack, selector="/context")
+
+    def pop_context(self):
+        stack = self.select("/context")[0].value
+        new_stack = stack[:-1]
+        return self.set_value(new_stack, selector="/context")
 
     def __repr__(self):
         return "Partial(root={}, path={})".format(self._root, self.path)

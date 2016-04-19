@@ -395,3 +395,49 @@ def make_attempt(m):
 attempt = make_attempt(List)
 
 
+#
+# Context Operators
+#
+
+def make_push_context(m):
+    @policy_rule_func(m)
+    def push_context(context):
+        """
+        Add an additional context to the stack for the partial
+        """
+        def for_partial(partial):
+            return m.unit( partial.push_context(context) )
+        return for_partial
+    return push_context
+push_context = make_push_context(List)
+
+
+def make_pop_context(m):
+    @policy_rule_func(m)
+    def pop_context(passthru):
+        """
+        Pop the partial's context stack, returning whatever
+        value it was called with.
+        """
+        def for_partial(partial):
+            _, new_partial = partial.pop_context()
+
+            return m.unit( (passthru, new_partial) )
+        return for_partial
+    return pop_context
+pop_context = make_pop_context(List)
+
+
+def make_wrap_context(m):
+    push_context = make_push_context(m)
+    pop_context = make_pop_context(m)
+
+    @policy_rule_func(m)
+    def wrap_context(context, op):
+        """
+        Run some operator inside some context
+        """
+        return push_context(context) >> op >> pop_context
+
+    return wrap_context
+wrap_context = make_wrap_context(List)
