@@ -10,7 +10,7 @@ use the operators in `dramafever.premium.commands` and not this module.
 from pymonad import List
 
 from dramafever.premium.services.policy.monads import (
-    stateT
+    policy_rule_func, get_call_repr
 )
 
 
@@ -18,13 +18,26 @@ from dramafever.premium.services.policy.monads import (
 # Policy Operators
 #
 
+def make_unit(m):
+    @policy_rule_func(m)
+    def unit(value):
+        """
+        Returns a value inside the monad
+        """
+        def for_partial(partial):
+            return m.unit((value, partial))
+        return for_partial
+    return unit
+unit = make_unit(List)
+
+
 def make_set_value(m):
+    @policy_rule_func(m)
     def set_value(value):
         """
         Sets the value for the currently scoped policy node. Overwrites
         the node with a LeafPolicyNode
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit(partial.set_value(value))
         return for_partial
@@ -33,12 +46,12 @@ set_value = make_set_value(List)
 
 
 def make_select(m):
-    def select(selector, set_path=True):
+    @policy_rule_func(m)
+    def select(selector, set_path=False):
         """
         Retrieves the policy node at a given selector and optionally
         sets the scope to that selector
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit(partial.select(selector, set_path=set_path))
         return for_partial
@@ -47,6 +60,7 @@ select = make_select(List)
 
 
 def make_const(m):
+    @policy_rule_func(m)
     def const(func):
         """
         Given a policy rule, returns a function that ignores its argument
@@ -62,11 +76,11 @@ const = make_const(List)
 
 
 def make_path(m):
+    @policy_rule_func(m)
     def path():
         """
         Retrieves the path for the current scope
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit( (partial.path, partial) )
         return for_partial
@@ -75,11 +89,11 @@ path = make_path(List)
 
 
 def make_set_path(m):
+    @policy_rule_func(m)
     def set_path(new_path):
         """
         Sets the path for the current scope
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit( partial.set_path(new_path) )
         return for_partial
@@ -87,11 +101,11 @@ def make_set_path(m):
 set_path = make_set_path(List)
 
 def make_define_as(m):
+    @policy_rule_func(m)
     def define_as(definition):
         """
         Sets the path for the current scope
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit( partial.define_as(definition) )
         return for_partial
@@ -105,23 +119,24 @@ def make_with_value(m):
         that takes a node and calls `func` with the node's value
         """
         def for_node(node):
-            @stateT(m)
             def for_partial(partial):
                 return func(node.value)(partial)
             return for_partial
-        return for_node
+        return policy_rule_func(
+            m, get_call_repr("with_value", func)
+        )(for_node)
     return with_value
 with_value = make_with_value(List)
 
 
 def make_check(m):
+    @policy_rule_func(m)
     def check(func):
         """
         Given a function that takes no arguments, returns a
         policy rule that runs the function and returns the result
         and an unchanged partial
         """
-        @stateT(m)
         def for_partial(partial):
             return m.unit( (func(), partial) )
         return for_partial
@@ -134,9 +149,10 @@ check = make_check(List)
 #
 
 def make_do(m):
-    unit = stateT(m).unit
+    unit = make_unit(m)
     const = make_const(m)
 
+    @policy_rule_func(m)
     def do(*rules):
         """
         Given a list of policy rules, returns a function that discards
@@ -156,8 +172,9 @@ def make_policies(m):
     const = make_const(m)
     path = make_path(m)
     set_path = make_set_path(m)
-    unit = stateT(m).unit
+    unit = make_unit(m)
 
+    @policy_rule_func(m)
     def policies(*rules):
         """
         Given a list of policy rules, returns a single policy rule that
@@ -185,8 +202,9 @@ def make_regarding(m):
     path = make_path(m)
     select = make_select(m)
     set_path = make_set_path(m)
-    unit = stateT(m).unit
+    unit = make_unit(m)
 
+    @policy_rule_func(m)
     def regarding(selector, *rule_funcs):
         """
         Given a selector and a list of functions that generate policy rules,
@@ -221,8 +239,9 @@ def make_given(m):
     path = make_path(m)
     select = make_select(m)
     set_path = make_set_path(m)
-    unit = stateT(m).unit
+    unit = make_unit(m)
 
+    @policy_rule_func(m)
     def given(selector, *rule_funcs):
         """
         Given a selector and a list of functions that generate policy rules,
@@ -260,8 +279,8 @@ given = make_given(List)
 #
 
 def make_fail(m):
+    @policy_rule_func(m)
     def fail():
-        @stateT(m)
         def for_partial(partial):
             return m.mzero()
         return for_partial
@@ -270,6 +289,7 @@ fail = make_fail(List)
 
 
 def make_match(m):
+    @policy_rule_func(m)
     def match(compare_to):
         """
         Given an expected value, selects the currently scoped node and ensures
@@ -279,7 +299,6 @@ def make_match(m):
         For non-matches, returns a monadic zero (e.g. if we're building a list
         of policies, this would collapse from [partial] to [])
         """
-        @stateT(m)
         def for_partial(partial):
             matches, new_partial = partial.match(compare_to)
 
@@ -296,12 +315,12 @@ def make_permit_values(m):
     match = make_match(m)
     unit = m.unit
 
+    @policy_rule_func(m)
     def permit_values(permitted_values):
         """
         Given a list of allowed values, matches the current partial against
         each, forking the non-deterministic computation.
         """
-        @stateT(m)
         def for_partial(partial):
             def for_value(value):
                 return unit(partial) >> match(value)
@@ -332,7 +351,6 @@ def make_attempt(m):
         rule!
         """
         def for_any(value):
-            @stateT(m)
             def for_partial(partial):
                 initial = unit( (value, partial) )
                 result = do(*rules)(value)(partial)
@@ -340,7 +358,8 @@ def make_attempt(m):
                     return initial
                 return result
             return for_partial
-        return for_any
+        attempt_rule_func_name = get_call_repr("attempt", *rules)
+        return policy_rule_func(m, attempt_rule_func_name)(for_any)
     return attempt
 attempt = make_attempt(List)
 
