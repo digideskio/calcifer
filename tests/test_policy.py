@@ -9,8 +9,8 @@ from dramafever.premium.services.policy.tree import (
 )
 from dramafever.premium.services.policy import (
     Partial,
-    set_value, select, const, path, set_path, with_value,
-    check, do, policies, regarding, given, fail, match, attempt,
+    set_value, select, path, set_path, with_value,
+    check, policies, regarding, given, fail, match, attempt,
     permit_values, define_as
 )
 from dramafever.premium.services.policy import operators
@@ -18,9 +18,7 @@ from dramafever.premium.services.policy import operators
 
 # set up the operators for the Identity and Maybe monads for
 # testing
-doI = operators.make_do(Identity)
 set_valueI = operators.make_set_value(Identity)
-constI = operators.make_const(Identity)
 policyI = operators.make_policies(Identity)
 regardingI = operators.make_regarding(Identity)
 givenI = operators.make_given(Identity)
@@ -28,8 +26,6 @@ matchI = operators.make_match(Identity)
 with_valueI = operators.make_with_value(Identity)
 
 set_valueM = operators.make_set_value(Maybe)
-doM = operators.make_do(Maybe)
-constM = operators.make_const(Maybe)
 policyM = operators.make_policies(Maybe)
 regardingM = operators.make_regarding(Maybe)
 givenM = operators.make_given(Maybe)
@@ -87,14 +83,14 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regardingI(self):
         func = policyI(
-            regardingI("/foo", doI(set_valueI(5)))
+            regardingI("/foo", set_valueI(5))
         )
         _, item = func(Partial()).getValue()
         value, _ = item.select("/foo")
         self.assertEqual(LeafPolicyNode(Value(5)), value)
 
         func = policyI(
-            regardingI("/fields/foo", doI(set_valueI(5)))
+            regardingI("/fields/foo", set_valueI(5))
         )
         _, item = func(Partial()).getValue()
         value, _ = item.select("/fields/foo")
@@ -102,7 +98,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regardingI_multiple(self):
         func = policyI(
-            regardingI("/fields/foo", doI(set_valueI(5), set_valueI(6)))
+            regardingI("/fields/foo", set_valueI(5), set_valueI(6))
         )
         _, item = func(Partial()).getValue()
         value, _ = item.select("/fields/foo")
@@ -110,12 +106,12 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_givenI(self):
         func = policyI(
-            regardingI("/fields/foo", doI(set_valueI("foo"))),
+            regardingI("/fields/foo", set_valueI("foo")),
             regardingI(
                 "/fields/bar",
-                doI(givenI(
+                givenI(
                     "/fields/foo", with_valueI(lambda foo: set_valueI(foo + "bar"))
-                ))
+                )
             )
         )
         _, partial = func(Partial()).getValue()
@@ -128,7 +124,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regardingM(self):
         func = policyM(
-           regardingM("/fields/foo", doM(set_valueM("foo"))),
+           regardingM("/fields/foo", set_valueM("foo")),
         )
 
         maybe = func( Partial() )
@@ -140,8 +136,8 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_policyM_multiple(self):
         func = policyM(
-           regardingM("/fields/foo", doM(set_valueM("foo"))),
-           regardingM("/fields/foo", doM(set_valueM("bar"))),
+           regardingM("/fields/foo", set_valueM("foo")),
+           regardingM("/fields/foo", set_valueM("bar")),
         )
 
         maybe = func( Partial() )
@@ -155,8 +151,8 @@ class PolicyBuilderTestCase(TestCase):
         func = policyM(
            regardingM(
                "/fields/foo",
-               doM(set_valueM("foo")),
-               doM(set_valueM("bar"))
+               set_valueM("foo"),
+               set_valueM("bar")
            )
         )
 
@@ -169,12 +165,12 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_givenM(self):
         func = policyM(
-            regardingM("/fields/foo", doM(set_valueM("foo"))),
+            regardingM("/fields/foo", set_valueM("foo")),
             regardingM(
                 "/fields/bar",
-                doM(givenM(
+                givenM(
                     "/fields/foo", with_valueM(lambda foo: set_valueM(foo + "bar"))
-                ))
+                )
             )
         )
 
@@ -188,14 +184,14 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_matchM(self):
         func = policyM(
-            regardingM("/fields/foo", doM(set_valueM("foo"))),
+            regardingM("/fields/foo", set_valueM("foo")),
             regardingM(
                 "/fields/bar",
-                doM(givenM(
+                givenM(
                     "/fields/foo", with_valueM(lambda foo: set_valueM(foo + "bar"))
-                ))
+                )
             ),
-            regardingM("/fields/bar", doM(matchM("foobar")))
+            regardingM("/fields/bar", matchM("foobar"))
         )
 
         maybe = func( Partial() )
@@ -209,7 +205,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regarding(self):
         func = policies(
-            regarding("/fields/foo", do(set_value("foo")))
+            regarding("/fields/foo", set_value("foo"))
         )
 
         ps = func( Partial() )
@@ -225,14 +221,14 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_match(self):
         func = policies(
-            regarding("/fields/foo", do(set_value("foo"))),
+            regarding("/fields/foo", set_value("foo")),
             regarding(
                 "/fields/bar",
-                do(given(
+                given(
                     "/fields/foo", with_value(lambda foo: set_value(foo + "bar"))
-                ))
+                )
             ),
-            regarding("/fields/bar", do(match("foobar")))
+            regarding("/fields/bar", match("foobar"))
         )
 
         ps = func( Partial() )
@@ -243,14 +239,14 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_match_invalid(self):
         func = policies(
-            regarding("/fields/foo", do(set_value("foo"))),
+            regarding("/fields/foo", set_value("foo")),
             regarding(
                 "/fields/bar",
-                do(given(
+                given(
                     "/fields/foo", with_value(lambda foo: set_value(foo + "bar"))
-                ))
+                )
             ),
-            regarding("/fields/bar", do(match("barfu")))
+            regarding("/fields/bar", match("barfu"))
         )
 
         ps = func( Partial() )
@@ -262,7 +258,7 @@ class PolicyBuilderTestCase(TestCase):
     def test_permit_values(self):
         # case 1, both values come through
         func = policies(
-            regarding("/fields/foo", do(permit_values(["foo", "bar"]))),
+            regarding("/fields/foo", permit_values(["foo", "bar"])),
         )
 
         ps = func( Partial() )
@@ -276,8 +272,8 @@ class PolicyBuilderTestCase(TestCase):
 
         # case 2, one value gets filtered through
         func = policies(
-            regarding("/fields/foo", do(permit_values(["foo", "bar"]))),
-            regarding("/fields/foo", do(match("foo")))
+            regarding("/fields/foo", permit_values(["foo", "bar"])),
+            regarding("/fields/foo", match("foo"))
         )
 
         ps = func( Partial() )
@@ -291,8 +287,8 @@ class PolicyBuilderTestCase(TestCase):
 
         # case 3, this one gets tricky... we can do the match() first!
         func = policies(
-            regarding("/fields/foo", do(match("foo"))),
-            regarding("/fields/foo", do(permit_values(["foo", "bar"])))
+            regarding("/fields/foo", match("foo")),
+            regarding("/fields/foo", permit_values(["foo", "bar"]))
         )
 
         ps = func( Partial() )
@@ -307,14 +303,14 @@ class PolicyBuilderTestCase(TestCase):
     def test_attempt(self):
         func = policies(
             regarding("/fields",
-                do(regarding("foo",
-                    do(permit_values(["foo", "bar"])),
+                regarding("foo",
+                    permit_values(["foo", "bar"]),
                     attempt(
                         match("foo"),
                         set_value("foo_updated")
                     ),
                 )
-            ))
+            )
         )
 
         ps = func( Partial() )
@@ -330,11 +326,11 @@ class PolicyBuilderTestCase(TestCase):
     def test_fail(self):
         func = policies(
             regarding("/fields",
-                do(regarding("foo",
-                    do(permit_values(["foo", "bar"])),
-                    do(fail()),
+                regarding("foo",
+                    permit_values(["foo", "bar"]),
+                    fail(),
                 )
-            ))
+            )
         )
 
         ps = func( Partial() )
@@ -348,7 +344,7 @@ class PolicyBuilderTestCase(TestCase):
         def get_policies(value):
             return regarding(
                 "/fields/foo",
-                do(check(lambda: value) >> set_value)
+                (check(lambda: value) >> set_value)
             )
 
         ps = get_policies(5)( Partial() )
@@ -366,7 +362,7 @@ class PolicyBuilderTestCase(TestCase):
 
         func = policies(
             regarding("/fields/foo",
-                do(define_as(definition))
+                define_as(definition)
             )
         )
 

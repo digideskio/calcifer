@@ -70,6 +70,10 @@ class UnknownPolicyNode(PolicyNode):
     def __init__(self):
         pass
 
+    @property
+    def value(self):
+        return None
+
     def get_template(self):
         return {}
 
@@ -123,7 +127,7 @@ class LeafPolicyNode(PolicyNode):
     def __repr__(self):
         return (
             "LeafPolicyNode("
-            "definition={definition}"
+            "definition={definition}, "
             ")"
         ).format(definition=self.definition)
 
@@ -144,6 +148,13 @@ class DictPolicyNode(PolicyNode):
     @property
     def nodes(self):
         return self._nodes
+
+    @property
+    def value(self):
+        return {
+            name: node.value
+            for name, node in self.nodes.items()
+        }
 
     def get_template(self):
         return {

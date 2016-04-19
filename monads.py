@@ -23,6 +23,8 @@ any number of templates, including zero. This is realized as:
     runStateT(initial_state) -> [(computation_result_value, new_state)]
 """
 import inspect
+import pprint
+pp = pprint.PrettyPrinter()
 from pymonad import Monad
 
 from dramafever.premium.services.policy import asts
@@ -116,6 +118,14 @@ def policyM(m):
             return super(PolicyRule, self).__repr__()
 
         def bind(self, rule_func):
+            if isinstance(rule_func, BasePolicyRule):
+                def make_rule_func(policy_rule):
+                    @policy_rule_func(m,
+                                      "do({})".format(repr(policy_rule.ast)))
+                    def do(_):
+                        return policy_rule
+                    return do
+                rule_func = make_rule_func(rule_func)
             if not isinstance(rule_func, BasePolicyRuleFunc):
                 rule_func = policy_rule_func(m)(rule_func)
 

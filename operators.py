@@ -76,22 +76,6 @@ def make_select(m):
 select = make_select(List)
 
 
-def make_const(m):
-    @policy_rule_func(m)
-    def const(func):
-        """
-        Given a policy rule, returns a function that ignores its argument
-        and simply returns the policy rule.
-
-        (Useful helper for chaining)
-        """
-        def for_value(_):
-            return func
-        return for_value
-    return const
-const = make_const(List)
-
-
 def make_path(m):
     @policy_rule_func(m)
     def path():
@@ -165,28 +149,7 @@ check = make_check(List)
 # Control Structures
 #
 
-def make_do(m):
-    unit = make_unit(m)
-    const = make_const(m)
-
-    @policy_rule_func(m)
-    def do(*rules):
-        """
-        Given a list of policy rules, returns a function that discards
-        its node value arg and returns a single policy rule that is the
-        bound fold of the list.
-        """
-        op = unit(None)
-        for rule in rules:
-            op = op >> const(rule)
-
-        return const(op)
-    return do
-do = make_do(List)
-
-
 def make_policies(m):
-    const = make_const(m)
     path = make_path(m)
     set_path = make_set_path(m)
     unit = make_unit(m)
@@ -201,13 +164,14 @@ def make_policies(m):
         def op_step(rule):
             return (
                 path() >> (lambda old_path:
+                unit(None) >>
                 rule >>
-                const(set_path(old_path))
+                set_path(old_path)
             ))
 
         op = unit(None)
         for rule in rules:
-            op = op >> const(op_step(rule))
+            op = op >> op_step(rule)
 
         return op
     return policies
@@ -215,11 +179,11 @@ policies = make_policies(List)
 
 
 def make_regarding(m):
-    const = make_const(m)
     path = make_path(m)
     select = make_select(m)
     set_path = make_set_path(m)
     unit = make_unit(m)
+    unit_value = make_unit_value(m)
 
     @policy_rule_func(m)
     def regarding(selector, *rule_funcs):
@@ -236,14 +200,19 @@ def make_regarding(m):
         def op_step(rule_func):
             return (
                 path() >> (lambda old_path:
-                select(selector, set_path=True) >>
+                select(selector, set_path=True) >> (lambda node:
+                unit(node) >>
                 rule_func >>
-                const(set_path(old_path)))
+                set_path(old_path) >>
+                unit_value(node)))
             )
 
-        op = unit(None)
-        for rule_func in rule_funcs:
-            op = op >> const(op_step(rule_func))
+        if rule_funcs:
+            op = unit(None)
+            for rule_func in rule_funcs:
+                op = op >> op_step(rule_func)
+        else:
+            op = select(selector, set_path=False) >> unit_value
 
         return op
 
@@ -252,7 +221,6 @@ regarding = make_regarding(List)
 
 
 def make_given(m):
-    const = make_const(m)
     path = make_path(m)
     select = make_select(m)
     set_path = make_set_path(m)
@@ -278,12 +246,12 @@ def make_given(m):
                 path() >> (lambda old_path:
                 select(selector, set_path=False) >>
                 rule_func >>
-                const(set_path(old_path)))
+                set_path(old_path))
             )
 
         op = unit(None)
         for rule_func in rule_funcs:
-            op = op >> const(op_step(rule_func))
+            op = op >> op_step(rule_func)
 
         return op
 
@@ -354,13 +322,12 @@ permit_values = make_permit_values(List)
 
 def make_attempt(m):
     mzero = m.mzero
-    unit = m.unit
-    do = make_do(m)
+    unit = make_unit(m)
 
     def attempt(*rules):
         """
         Keeping track of the value and partial it receives,
-        if the result of do(*rules) on the partial is mzero,
+        if the result of *rules on the partial is mzero,
         then `attempt` returns `unit( (initial_value, initial_policy) )`
         otherwise, `attempt` returns the result of the rules.
 
@@ -369,8 +336,12 @@ def make_attempt(m):
         """
         def for_any(value):
             def for_partial(partial):
-                initial = unit( (value, partial) )
-                result = do(*rules)(value)(partial)
+                op = unit(value)
+                initial = op(partial)
+                for rule in rules:
+                    op = op >> rule
+                result = op(partial)
+
                 if result == mzero():
                     return initial
                 return result

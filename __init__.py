@@ -10,8 +10,8 @@ template generation. The operators are designed to provide flexible
 tooling for the creation of high-level policy rules.
 """
 from dramafever.premium.services.policy.operators import (
-    set_value, define_as, select, const, path, set_path, with_value,
-    check, do, policies, regarding, given, fail, match, attempt,
+    set_value, define_as, select, path, set_path, with_value,
+    check, policies, regarding, given, fail, match, attempt,
     permit_values
 )
 from dramafever.premium.services.policy.partial import Partial
