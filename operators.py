@@ -367,15 +367,15 @@ def make_attempt(m):
     mzero = m.mzero
     unit = make_unit(m)
 
-    def attempt(*rules):
+    def attempt(*rules, **kwargs):
         """
         Keeping track of the value and partial it receives,
         if the result of *rules on the partial is mzero,
         then `attempt` returns `unit( (initial_value, initial_policy) )`
         otherwise, `attempt` returns the result of the rules.
 
-        N.B. `attempt` is a Policy Rule *Function*, not just a policy
-        rule!
+        Accepts a policy rule function as kwarg `catch=` which can be
+        applied instead of simply "not failing"
         """
         def for_any(value):
             def for_partial(partial):
@@ -386,10 +386,12 @@ def make_attempt(m):
                 result = op(partial)
 
                 if result == mzero():
+                    if 'catch' in kwargs:
+                        return (unit(value) >> kwargs['catch'])(partial)
                     return initial
                 return result
             return for_partial
-        attempt_rule_func_name = get_call_repr("attempt", *rules)
+        attempt_rule_func_name = get_call_repr("attempt", *rules, **kwargs)
         return policy_rule_func(m, attempt_rule_func_name)(for_any)
     return attempt
 attempt = make_attempt(List)
