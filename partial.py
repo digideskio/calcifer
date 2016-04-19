@@ -34,8 +34,16 @@ class Partial(object):
         )
 
     @property
+    def root(self):
+        return self._root.value
+
+    @property
     def path(self):
         return self._pointer.parts
+
+    @property
+    def scope(self):
+        return self._pointer.path
 
     def get_template(self):
         return self._root.get_template()
@@ -77,10 +85,15 @@ class Partial(object):
             )
         )
 
-    def set_value(self, value):
+    def set_value(self, value, selector=None):
+        if selector is not None:
+            pointer = JsonPointer(selector)
+        else:
+            pointer = self._pointer
+
         return (
             value, Partial(
-                self._pointer.set(
+                pointer.set(
                     self._root, LeafPolicyNode(Value(value)), inplace=False
                 ),
                 path=self._pointer.parts

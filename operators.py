@@ -89,6 +89,46 @@ def make_path(m):
 path = make_path(List)
 
 
+def make_scope(m):
+    @policy_rule_func(m)
+    def scope():
+        """
+        Retrieves the selector for the current scope
+        """
+        def for_partial(partial):
+            return m.unit( (partial.scope, partial) )
+        return for_partial
+    return scope
+scope = make_scope(List)
+
+
+def make_get_node(m):
+    @policy_rule_func(m)
+    def get_node():
+        """
+        Retrieves the node at the current pointer
+        """
+        def for_partial(partial):
+            return m.unit( partial.select("") )
+        return for_partial
+    return get_node
+get_node = make_get_node(List)
+
+
+def make_get_value(m):
+    get_node = make_get_node(m)
+    unit_value = make_unit_value(m)
+
+    @policy_rule_func(m)
+    def get_value():
+        """
+        Retrieves the value for the node at the current pointer
+        """
+        return get_node() >> unit_value
+    return get_value
+get_value = make_get_value(List)
+
+
 def make_set_path(m):
     @policy_rule_func(m)
     def set_path(new_path):
