@@ -15,7 +15,7 @@ from dramafever.premium.services.policy.monads import (
 
 
 #
-# Policy Operators
+# Partial Operators
 #
 
 def make_unit(m):
