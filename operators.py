@@ -443,3 +443,29 @@ def make_wrap_context(m):
 
     return wrap_context
 wrap_context = make_wrap_context(List)
+
+
+def make_require_value(m):
+    get_node = make_get_node(m)
+
+    @policy_rule_func(m)
+    def require_value():
+        """
+        Returns an mzero (empty list, e.g.) if the provided node
+        is missing a value
+
+        For instance:
+            select("/does/not/exist") >> require_value
+        returns []
+        """
+        def for_node(node):
+            def for_partial(partial):
+                if node.value is None:
+                    return m.mzero()
+                return m.unit( (None, partial) )
+            return for_partial
+        return get_node() >> for_node
+    return require_value
+require_value = make_require_value(List)
+
+
