@@ -469,3 +469,20 @@ def make_require_value(m):
 require_value = make_require_value(List)
 
 
+def make_raise_errors(m):
+    @policy_rule_func(m)
+    def raise_errors():
+        """
+        Hook for accessing "/errors" in partial as an exception
+        TODO: hook up proper exception handling
+        """
+        def for_partial(partial):
+            errors_node, _ = partial.select("/errors")
+            errors = errors_node.value
+            if errors:
+                raise Exception(errors)
+            return m.unit( (None, partial) )
+        return for_partial
+    return raise_errors
+raise_errors = make_raise_errors(List)
+
