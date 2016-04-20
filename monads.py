@@ -23,11 +23,13 @@ any number of templates, including zero. This is realized as:
     runStateT(initial_state) -> [(computation_result_value, new_state)]
 """
 import inspect
-import pprint
-pp = pprint.PrettyPrinter()
+import logging
 from pymonad import Monad
 
 from dramafever.premium.services.policy import asts
+
+logger = logging.getLogger(__name__)
+
 
 def stateT(m):
     class StateT(Monad):
@@ -132,9 +134,9 @@ def policyM(m):
             try:
                 binding = super(PolicyRule, self).bind(rule_func)
             except:
-                pp.pprint((
+                logger.exception((
                     "error binding `{}` to rule_func `{}`"
-                ).format(self, rule_func))
+                ).format(repr(self), repr(rule_func)))
                 raise
 
             new_ast = asts.Binding(self.ast, rule_func.ast)
@@ -147,8 +149,9 @@ def policyM(m):
             try:
                 result = super(PolicyRule, self).__call__(partial)
             except:
-                print "error evaluating policy rule: ",
-                pp.pprint(self.ast)
+                logger.exception((
+                    "error evaluating policy rule: {}".format(repr(self))
+                ))
                 raise
             return result
 
