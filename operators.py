@@ -486,3 +486,36 @@ def make_raise_errors(m):
     return raise_errors
 raise_errors = make_raise_errors(List)
 
+
+def make_trace(m):
+    scope = make_scope(m)
+    get_value = make_get_value(m)
+    select = make_select(m)
+    unit = make_unit(m)
+    unit_value = make_unit_value(m)
+
+    @policy_rule_func(m)
+    def trace():
+        """
+        Collates the current scope, the current node's value,
+        and the current policy context and returns it as a dict
+        """
+        return scope() >> (
+            lambda scope: (
+                get_value() >> (
+                    lambda value: (
+                        select("/context") >> unit_value >> (
+                            lambda context: (
+                                unit({
+                                    "scope": scope,
+                                    "context": context,
+                                    "value": value
+                                })
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    return trace
+trace = make_trace(List)
