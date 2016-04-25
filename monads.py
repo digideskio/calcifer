@@ -22,6 +22,7 @@ one way, and thus, the command policy for a given request may indeed return
 any number of templates, including zero. This is realized as:
     runStateT(initial_state) -> [(computation_result_value, new_state)]
 """
+from abc import ABCMeta
 import inspect
 import logging
 from pymonad import Monad
@@ -159,7 +160,7 @@ def policyM(m):
     return PolicyRule
 
 class BasePolicyRuleFunc(object):
-    pass
+    __metaclass__ = ABCMeta
 
 def get_call_repr(func_name, *args, **kwargs):
     return repr(asts.PolicyRuleFuncCall(func_name, args, kwargs))
@@ -179,6 +180,18 @@ def policy_rule_func(m, rule_func_name=None):
                     ).format(
                         ", ".join(inspect.getargspec(rule_func).args)
                     )
+
+
+                if rule_func.__doc__:
+                    # this is janky but it works.
+                    # if someone goes through the trouble of writing a
+                    # docstring for a rule func, it should be accessible
+                    # with `help()` and nicely readable.
+                    self.__class__.__doc__ = rule_func.__doc__
+                    self.__class__.__name__ = (
+                        "<PolicyRuleFunc {}>".format(rule_func_name)
+                    )
+
 
                 self.ast = asts.PolicyRuleFunc(rule_func_name)
                 self.rule_func = rule_func
