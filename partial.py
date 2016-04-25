@@ -53,9 +53,6 @@ class Partial(object):
     def get_template(self):
         return self._root.get_template()
 
-    def validate(self):
-        return self._root.validate()
-
     def select(self, selector, set_path=True):
         old_selector = self._pointer.path
         old_path = self._pointer.parts
