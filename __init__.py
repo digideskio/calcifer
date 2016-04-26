@@ -11,6 +11,7 @@ tooling for the creation of high-level policy rules.
 """
 from dramafever.premium.services.policy.operators import (
     attempt,
+    append_value,
     check,
     define_as,
     fail,

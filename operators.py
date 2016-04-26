@@ -129,6 +129,21 @@ def make_get_value(m):
 get_value = make_get_value(List)
 
 
+def make_append_value(m):
+    get_value = make_get_value(m)
+    set_value = make_set_value(m)
+
+    @policy_rule_func(m)
+    def append_value(value):
+        """
+        Gets the value at the current node, and, assuming it to be a list,
+        appends `value`
+        """
+        return get_value() >> (lambda values: set_value(values + [value]))
+    return append_value
+append_value = make_append_value(List)
+
+
 def make_set_path(m):
     @policy_rule_func(m)
     def set_path(new_path):
