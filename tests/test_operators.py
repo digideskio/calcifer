@@ -1,5 +1,3 @@
-import pytest
-
 from django.test import TestCase
 from pymonad import Just, List, Maybe
 
@@ -9,7 +7,7 @@ from dramafever.premium.services.policy.tree import (
 )
 from dramafever.premium.services.policy import (
     Partial,
-    set_value, select, path, set_path, with_value,
+    set_value, with_value,
     check, policies, regarding, given, fail, match, attempt,
     permit_values, define_as
 )
@@ -116,10 +114,10 @@ class PolicyBuilderTestCase(TestCase):
         )
         _, partial = func(Partial()).getValue()
 
-        foo, _ = partial.select("/fields/foo")
-        bar, _ = partial.select("/fields/bar")
-        self.assertEqual("foo", foo.value)
-        self.assertEqual("foobar", bar.value)
+        foo_node, _ = partial.select("/fields/foo")
+        bar_node, _ = partial.select("/fields/bar")
+        self.assertEqual("foo", foo_node.value)
+        self.assertEqual("foobar", bar_node.value)
 
 
     def test_regardingM(self):
@@ -130,9 +128,9 @@ class PolicyBuilderTestCase(TestCase):
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
-        foo, _ = partial.select("/fields/foo")
+        foo_node, _ = partial.select("/fields/foo")
 
-        self.assertEqual(LeafPolicyNode(Value("foo")), foo)
+        self.assertEqual(LeafPolicyNode(Value("foo")), foo_node)
 
     def test_policyM_multiple(self):
         func = policyM(
@@ -143,9 +141,9 @@ class PolicyBuilderTestCase(TestCase):
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
-        foo, _ = partial.select("/fields/foo")
+        foo_node, _ = partial.select("/fields/foo")
 
-        self.assertEqual(LeafPolicyNode(Value("bar")), foo)
+        self.assertEqual(LeafPolicyNode(Value("bar")), foo_node)
 
     def test_regardingM_multiple(self):
         func = policyM(
@@ -159,9 +157,9 @@ class PolicyBuilderTestCase(TestCase):
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
-        foo, _ = partial.select("/fields/foo")
+        foo_node, _ = partial.select("/fields/foo")
 
-        self.assertEqual(LeafPolicyNode(Value("bar")), foo)
+        self.assertEqual(LeafPolicyNode(Value("bar")), foo_node)
 
     def test_givenM(self):
         func = policyM(
@@ -177,10 +175,10 @@ class PolicyBuilderTestCase(TestCase):
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
-        foo, _ = partial.select("/fields/foo")
-        bar, _ = partial.select("/fields/bar")
-        self.assertEqual("foo", foo.value)
-        self.assertEqual("foobar", bar.value)
+        foo_node, _ = partial.select("/fields/foo")
+        bar_node, _ = partial.select("/fields/bar")
+        self.assertEqual("foo", foo_node.value)
+        self.assertEqual("foobar", bar_node.value)
 
     def test_matchM(self):
         func = policyM(
@@ -197,10 +195,10 @@ class PolicyBuilderTestCase(TestCase):
         maybe = func( Partial() )
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
-        foo, _ = partial.select("/fields/foo")
-        bar, _ = partial.select("/fields/bar")
-        self.assertEqual("foo", foo.value)
-        self.assertEqual("foobar", bar.value)
+        foo_node, _ = partial.select("/fields/foo")
+        bar_node, _ = partial.select("/fields/bar")
+        self.assertEqual("foo", foo_node.value)
+        self.assertEqual("foobar", bar_node.value)
 
 
     def test_regarding(self):
@@ -216,8 +214,8 @@ class PolicyBuilderTestCase(TestCase):
 
         _, partial = results[0]
 
-        foo, _ = partial.select("/fields/foo")
-        self.assertEqual(LeafPolicyNode(Value("foo")), foo)
+        foo_node, _ = partial.select("/fields/foo")
+        self.assertEqual(LeafPolicyNode(Value("foo")), foo_node)
 
     def test_match(self):
         func = policies(
