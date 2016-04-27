@@ -53,7 +53,7 @@ class Field(Definition):
 
     @property
     def value(self):
-        return self._params['value']
+        return self._params.get('value')
 
     def get_template(self):
         return self.params

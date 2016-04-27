@@ -4,6 +4,7 @@ import types
 
 from dramafever.premium.services.policy.contexts import Context
 from dramafever.premium.services.policy.partial import Partial
+from dramafever.premium.services.policy.exceptions import PolicyException
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class BasePolicy(object):
         results = [
             new_self.resolve(final) for _, final in policy_rule(partial)
         ]
+
         return results
 
     def include(self, other):

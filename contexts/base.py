@@ -1,7 +1,7 @@
 import types
 
 from dramafever.premium.services.policy import (
-    policies, wrap_context,
+    unless_errors, wrap_context,
 
     PolicyRule, PolicyRuleFunc
 )
@@ -81,7 +81,7 @@ class BaseContext(object):
         self.ctx_name = kwargs.get('name', None)
 
         if wrapper is None:
-            wrapper = lambda policy_rules: policies(*policy_rules)
+            wrapper = lambda policy_rules: unless_errors(*policy_rules)
 
         self.wrapper = wrapper
         self.ctx_args = ctx_args

@@ -135,7 +135,7 @@ def policyM(m):
             try:
                 binding = super(PolicyRule, self).bind(rule_func)
             except:
-                logger.exception((
+                logger.debug((
                     "error binding `{}` to rule_func `{}`"
                 ).format(repr(self), repr(rule_func)))
                 raise
@@ -150,7 +150,7 @@ def policyM(m):
             try:
                 result = super(PolicyRule, self).__call__(partial)
             except:
-                logger.exception((
+                logger.debug((
                     "error evaluating policy rule: {}".format(repr(self))
                 ))
                 raise

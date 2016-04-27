@@ -9,6 +9,7 @@ use the operators in `dramafever.premium.commands` and not this module.
 """
 from pymonad import List
 
+from dramafever.premium.services.policy.exceptions import PolicyException
 from dramafever.premium.services.policy.monads import (
     policy_rule_func, get_call_repr
 )
@@ -523,12 +524,24 @@ def make_raise_errors(m):
             errors_node, _ = partial.select("/errors")
             errors = errors_node.value
             if errors:
-                raise Exception(errors)
+                raise PolicyException(errors)
             return m.unit( (None, partial) )
         return for_partial
     return raise_errors
 raise_errors = make_raise_errors(List)
 
+
+def make_unless_errors(m):
+    @policy_rule_func(m)
+    def unless_errors(*rules):
+        def for_partial(partial):
+            errors = partial.root.get('errors', None)
+            if errors:
+                return m.unit( (None, partial) )
+            return policies(*rules)(partial)
+        return for_partial
+    return unless_errors
+unless_errors = make_unless_errors(List)
 
 def make_trace(m):
     scope = make_scope(m)
