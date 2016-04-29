@@ -43,7 +43,10 @@ class Partial(object):
 
     @property
     def scope(self):
-        return self._pointer.path
+        sel = self._pointer.path
+        if not sel:
+            sel = '/'
+        return sel
 
     @property
     def scope_value(self):
@@ -53,14 +56,30 @@ class Partial(object):
     def get_template(self):
         return self._root.get_template()
 
+    @staticmethod
+    def sub_scope(parent_abs='/', child_rel=''):
+        rels = []
+        if parent_abs == '/':
+            rels.append('')
+        else:
+            rels += parent_abs.split('/')
+
+        if child_rel:
+            rels += child_rel.split('/')
+
+        return '/'.join(rels)
+
     def select(self, selector, set_path=True):
-        old_selector = self._pointer.path
+        old_selector = self.scope
         old_path = self._pointer.parts
 
         if not selector:
             selector = old_selector
         elif selector[0] != '/':
-            selector = "{}/{}".format(old_selector, selector)
+            selector = self.sub_scope(old_selector, selector)
+
+        if selector == '/':
+            selector = ''
 
         selected_path = JsonPointer(selector).parts
 
