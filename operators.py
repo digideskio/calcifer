@@ -115,6 +115,20 @@ def make_get_node(m):
 get_node = make_get_node(List)
 
 
+def make_children(m):
+    @policy_rule_func(m)
+    def children():
+        def for_partial(partial):
+            node, _ = partial.select("")
+            if not hasattr(node, 'nodes'):
+                return m.unit( (None, partial) )
+
+            return m.unit( (node.nodes.keys(), partial) )
+        return for_partial
+    return children
+children = make_children(List)
+
+
 def make_get_value(m):
     get_node = make_get_node(m)
     unit_value = make_unit_value(m)
@@ -238,9 +252,8 @@ policies = make_policies(List)
 
 
 def make_regarding(m):
-    path = make_path(m)
+    scope = make_scope(m)
     select = make_select(m)
-    set_path = make_set_path(m)
     unit = make_unit(m)
     unit_value = make_unit_value(m)
 
@@ -259,11 +272,11 @@ def make_regarding(m):
         @policy_rule_func(m)
         def regarding_step(rule_func):
             return (
-                path() >> (lambda old_path:
+                scope() >> (lambda old_scope:
                 select(selector, set_path=True) >> (lambda node:
                 unit(node) >>
                 rule_func >>
-                set_path(old_path) >>
+                select(old_scope, set_path=True) >>
                 unit_value(node)))
             )
 
@@ -318,6 +331,39 @@ def make_given(m):
 
     return given
 given = make_given(List)
+
+
+def make_each(m):
+    unit = make_unit(m)
+    def each(rule_func, **kwargs):
+        """
+        `each(rule_func)` is a policy rule function that accepts a
+        dictionary and calls `rule_func(value)` successively, with the
+        partial scope set to the key.
+
+        `each` optionally takes a named argument `ref=dict()` to provide
+        a built-in lookup for some reference dictionary. If ref is
+        provided, `rule_func(ref[key])` is called instead.
+        """
+        ref_obj = kwargs.get('ref')
+
+        def for_keys(keys):
+            @policy_rule_func(m)
+            def each_step(key):
+                if ref_obj:
+                    value = ref_obj.get(key)
+                    return (
+                        regarding(key, unit(value) >> rule_func)
+                    )
+                return regarding(key, rule_func)
+
+            steps = [each_step(key) for key in keys]
+            return regarding("", *steps)
+
+        each_rule_func_name = get_call_repr("each", rule_func, **kwargs)
+        return policy_rule_func(m, each_rule_func_name)(for_keys)
+    return each
+each = make_each(List)
 
 
 #

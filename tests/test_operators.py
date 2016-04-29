@@ -1,7 +1,9 @@
 from django.test import TestCase
 from pymonad import Just, List, Maybe
 
-from dramafever.premium.services.policy.monads import Identity
+from dramafever.premium.services.policy.monads import (
+    Identity, policy_rule_func
+)
 from dramafever.premium.services.policy.tree import (
     LeafPolicyNode, DictPolicyNode, UnknownPolicyNode, Value
 )
@@ -9,7 +11,7 @@ from dramafever.premium.services.policy import (
     Partial,
     set_value, with_value,
     check, policies, regarding, given, fail, match, attempt,
-    permit_values, define_as
+    permit_values, define_as, children, each, scope,
 )
 from dramafever.premium.services.policy import operators
 
@@ -382,3 +384,73 @@ class PolicyBuilderTestCase(TestCase):
         values = [r[0] for r in results]
 
         self.assertEqual([5], values)
+
+    def test_regarding_scoping(self):
+        assertEquals = self.assertEquals
+        @policy_rule_func(List)
+        def expect_scope(expected="/", msg=None):
+            return scope() >> (lambda actual:
+                check(lambda: assertEquals(actual, expected, msg=msg))
+            )
+
+        func = regarding("",
+            expect_scope("/", 0),
+            regarding("a", expect_scope("/a", 1)),
+            expect_scope("/", 2),
+            regarding("b",
+                expect_scope("/b", 3),
+                regarding("c", expect_scope("/b/c", 4)),
+                expect_scope("/b", 5),
+            ),
+        )
+
+        ps = func( Partial.from_obj({}) )
+
+
+    def test_children(self):
+        func = children()
+        ps = func( Partial.from_obj({"foo": 5}) )
+
+        results = ps.getValue()
+        values = [r[0] for r in results]
+
+        self.assertEqual([['foo']], values)
+
+    def test_each(self):
+        counter = {
+            "num": 0
+        }
+        def increment_set(_):
+            counter['num'] += 1
+            num = counter['num']
+            return set_value(num)
+
+        func = children() >> each(increment_set)
+        ps = func( Partial.from_obj({"a": 0, "b": 0, "c": 0}) )
+
+        results = ps.getValue()
+        roots = [r[1].root for r in results]
+
+        self.assertEquals(len(roots), 1)
+        root = roots[0]
+        self.assertIsInstance(root, dict)
+
+        values = root.values()
+        values.sort()
+
+        self.assertEquals(values, [1,2,3])
+
+    def test_each_ref(self):
+        ref_obj = {"a": 7, "b": 3, "c": -1}
+        func = children() >> each(set_value, ref=ref_obj)
+
+        ps = func( Partial.from_obj({"a": 0, "b": 0, "c": 0}) )
+
+        results = ps.getValue()
+        roots = [r[1].root for r in results]
+
+        self.assertEquals(len(roots), 1)
+        root = roots[0]
+        self.assertIsInstance(root, dict)
+
+        self.assertEquals(root, ref_obj)
