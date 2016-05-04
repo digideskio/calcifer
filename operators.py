@@ -42,7 +42,7 @@ def make_unit_value(m):
             if hasattr(node, 'value'):
                 return m.unit((node.value, partial))
             else:
-                return m.mzero()
+                return m.unit((None, partial))
         return for_partial
     return unit_value
 unit_value = make_unit_value(List)
@@ -163,7 +163,10 @@ def make_define_as(m):
         Sets the path for the current scope
         """
         def for_partial(partial):
-            return m.unit( partial.define_as(definition) )
+            new_definition, new_partial = partial.define_as(definition)
+            if new_definition is None:
+                return m.mzero()
+            return m.unit( (new_definition, new_partial) )
         return for_partial
     return define_as
 define_as = make_define_as(List)
@@ -402,7 +405,8 @@ def make_attempt(m):
 
                 if result == mzero():
                     if 'catch' in kwargs:
-                        return (unit(value) >> kwargs['catch'])(partial)
+                        alternative = (unit(value) >> kwargs['catch'])(partial)
+                        return alternative
                     return initial
                 return result
             return for_partial
@@ -482,6 +486,30 @@ def make_require_value(m):
         return get_node() >> for_node
     return require_value
 require_value = make_require_value(List)
+
+
+def make_forbid_value(m):
+    get_node = make_get_node(m)
+
+    @policy_rule_func(m)
+    def forbid_value():
+        """
+        Returns an mzero (empty list, e.g.) if the provided node
+        is missing a value
+
+        For instance:
+            select("/does/not/exist") >> forbid_value
+        returns []
+        """
+        def for_node(node):
+            def for_partial(partial):
+                if node.value is not None:
+                    return m.mzero()
+                return m.unit( (None, partial) )
+            return for_partial
+        return get_node() >> for_node
+    return forbid_value
+forbid_value = make_forbid_value(List)
 
 
 def make_raise_errors(m):

@@ -45,6 +45,11 @@ class Partial(object):
     def scope(self):
         return self._pointer.path
 
+    @property
+    def scope_value(self):
+        node, _ = self.select(self.scope, set_path=False)
+        return node.value
+
     def get_template(self):
         return self._root.get_template()
 
@@ -76,6 +81,13 @@ class Partial(object):
         )
 
     def define_as(self, definition):
+        existing_value = self.scope_value
+        if existing_value:
+            valid, new_definition = definition.match(existing_value)
+            if not valid:
+                return (None, self)
+            definition = new_definition
+
         return (
             definition, Partial(
                 self._pointer.set(
