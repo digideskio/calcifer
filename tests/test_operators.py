@@ -404,7 +404,7 @@ class PolicyBuilderTestCase(TestCase):
             ),
         )
 
-        ps = func( Partial.from_obj({}) )
+        func( Partial.from_obj({}) )
 
 
     def test_children(self):
