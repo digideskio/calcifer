@@ -513,24 +513,6 @@ def make_forbid_value(m):
 forbid_value = make_forbid_value(List)
 
 
-def make_raise_errors(m):
-    @policy_rule_func(m)
-    def raise_errors():
-        """
-        Hook for accessing "/errors" in partial as an exception
-        TODO: hook up proper exception handling
-        """
-        def for_partial(partial):
-            errors_node, _ = partial.select("/errors")
-            errors = errors_node.value
-            if errors:
-                raise PolicyException(errors)
-            return m.unit( (None, partial) )
-        return for_partial
-    return raise_errors
-raise_errors = make_raise_errors(List)
-
-
 def make_unless_errors(m):
     @policy_rule_func(m)
     def unless_errors(*rules):
@@ -542,6 +524,7 @@ def make_unless_errors(m):
         return for_partial
     return unless_errors
 unless_errors = make_unless_errors(List)
+
 
 def make_trace(m):
     scope = make_scope(m)
