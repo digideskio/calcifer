@@ -1,3 +1,3 @@
-from dramafever.premium.services.policy.contexts.contexts import (
+from dramafever.premium.services.policy.contexts.context import (
     Context
 )

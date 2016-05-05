@@ -6,6 +6,49 @@ from dramafever.premium.services.policy import (
     PolicyRule, PolicyRuleFunc
 )
 
+
+def ctx_apply(f, got, remaining):
+    """
+    Creates a promise to call `f` with some values corresponding to
+    the contextual values (or regular values) in `remaining`, accumulating
+    the true values in `got`.
+
+    `f` is then called when remaining is empty, and got is full.
+    """
+    # base case:
+    if not remaining:
+        if got:
+            return f(*got)
+        return f
+
+    # recursive step:
+    first, rest = remaining[0], remaining[1:]
+
+    # so, depending on how exactly `first` is not a value:
+    if hasattr(first, 'finalize'):
+        # if it's a subcontext, finalize it to a policy rule,
+        # then add the policy rule back to `remaining` and recurse
+        value = first.finalize()
+        return ctx_apply(f, got, (value,)+rest)
+
+    if hasattr(first, 'bind'):
+        # if it's a policy rule, we're going to have to wait until
+        # the policy monad evaluates. so we bind the policy rule to
+        # a function that moves the value over to `got` and recurses
+        # there.
+        #
+        # (one might notice that Context never really accesses
+        # the value... by the time a request comes in and policy is
+        # evaluated, the underlying Context object will long have since
+        # been finalized() and possibly even GC'd. Context only does
+        # syntactic policy rule manipulation.)
+        return first >> (lambda value:
+                         ctx_apply(f, got+[value], rest))
+
+    # a regular, plain-ol' value!? bam. lists.
+    return ctx_apply(f, got+[first], rest)
+
+
 class BaseContext(object):
     """
     Underlying implementation of the Context policy builder.
@@ -56,14 +99,14 @@ class BaseContext(object):
         Append a policy operation to the Context.
 
         If it's a regular function or a policy rule function, and *args
-        are supplied, use self.ctx_apply to create a "promise" and append
+        are supplied, use ctx_apply to create a "promise" and append
         that instead.
         """
         if (
                 type(item) == types.FunctionType or
                 self.is_policy_rule_func(item)
         ):
-            self.items.append(self.ctx_apply(item, [], args))
+            self.items.append(ctx_apply(item, [], args))
         else:
             self.items.append(item)
         return self
@@ -100,7 +143,7 @@ class BaseContext(object):
         return sub
 
     def wrap(self, items):
-        wrapped = self.ctx_apply(self.wrapper(items), [], self.ctx_args)
+        wrapped = ctx_apply(self.wrapper(items), [], self.ctx_args)
         # if the Context has the ctx_name property, wrap the final policy
         # rule in a `wrap_context` operator.
         if self.ctx_name:
@@ -108,48 +151,6 @@ class BaseContext(object):
 
             wrapped = wrap_context(ctx_frame, wrapped)
         return wrapped
-
-    @classmethod
-    def ctx_apply(cls, f, got, remaining):
-        """
-        Creates a promise to call `f` with some values corresponding to
-        the contextual values (or regular values) in `remaining`, accumulating
-        the true values in `got`.
-
-        `f` is then called when remaining is empty, and got is full.
-        """
-        # base case:
-        if not remaining:
-            if got:
-                return f(*got)
-            return f
-
-        # recursive step:
-        first, rest = remaining[0], remaining[1:]
-
-        # so, depending on how exactly `first` is not a value:
-        if hasattr(first, 'finalize'):
-            # if it's a subcontext, finalize it to a policy rule,
-            # then add the policy rule back to `remaining` and recurse
-            value = first.finalize()
-            return cls.ctx_apply(f, got, (value,)+rest)
-
-        if hasattr(first, 'bind'):
-            # if it's a policy rule, we're going to have to wait until
-            # the policy monad evaluates. so we bind the policy rule to
-            # a function that moves the value over to `got` and recurses
-            # there.
-            #
-            # (one might notice that Context never really accesses
-            # the value... by the time a request comes in and policy is
-            # evaluated, the underlying Context object will long have since
-            # been finalized() and possibly even GC'd. Context only does
-            # syntactic policy rule manipulation.)
-            return first >> (lambda value:
-                             cls.ctx_apply(f, got+[value], rest))
-
-        # a regular, plain-ol' value!? bam. lists.
-        return cls.ctx_apply(f, got+[first], rest)
 
     @property
     def finalized_items(self):

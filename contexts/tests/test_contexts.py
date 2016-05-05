@@ -2,8 +2,8 @@ from django.test import TestCase
 
 from dramafever.premium.services.tests.utils import run_policy
 
-from dramafever.premium.services.policy.contexts.contexts import (
-    BaseContext, Context
+from dramafever.premium.services.policy.contexts import (
+    Context
 )
 
 from dramafever.premium.services.policy import (
@@ -12,9 +12,9 @@ from dramafever.premium.services.policy import (
     asts
 )
 
-class BaseContextTestCase(TestCase):
+class ContextTestCase(TestCase):
     def test_append_policy(self):
-        ctx = BaseContext()
+        ctx = Context()
         policy = regarding('/foo', set_value(5))
         ctx.append(policy)
         policy = ctx.finalize()
@@ -24,7 +24,7 @@ class BaseContextTestCase(TestCase):
         self.assertEquals(result['foo'], 5)
 
     def test_append_function(self):
-        ctx = BaseContext()
+        ctx = Context()
         value = unit(5)
 
         def with_value(value):
@@ -40,7 +40,7 @@ class BaseContextTestCase(TestCase):
         self.assertEquals(result['foo'], 5)
 
     def test_subctx_policy(self):
-        ctx = BaseContext()
+        ctx = Context()
 
         subctx = ctx.subctx(
             lambda policy_rules: regarding('/foo', *policy_rules)
@@ -54,7 +54,7 @@ class BaseContextTestCase(TestCase):
         self.assertEquals(result['foo'], 5)
 
     def test_subctx_noop_policy(self):
-        ctx = BaseContext()
+        ctx = Context()
 
         foo_ctx_value = ctx.subctx(
             lambda policy_rules: regarding('/foo', *policy_rules)
@@ -75,8 +75,6 @@ class BaseContextTestCase(TestCase):
         result = run_policy(ctx.finalize(), {"foo": "zebra"})
         self.assertEquals(result['bar'], "zebra")
 
-
-class ContextTestCase(TestCase):
     def test_or_error(self):
         ctx = Context()
         ctx.consumer_name.require().or_error()
