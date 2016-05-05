@@ -3,12 +3,11 @@ import types
 from dramafever.premium.services.policy import (
     policies, regarding, set_value, permit_values, wrap_context, unit_value,
     select, check, require_value, attempt, select, trace, append_value,
-    define_as, forbid_value,
+    forbid_value,
 
     PolicyRule, PolicyRuleFunc,
 )
 from dramafever.premium.services.policy.contexts.policies import (
-    add_fields,
     add_error
 )
 
@@ -364,29 +363,3 @@ class Context(BaseContext):
         return self
 
 
-class QueryContext(Context):
-    def param(self, param_name):
-        ctx_name = "param({})".format(param_name)
-        return self.scope_item_subctx("/params", param_name, ctx_name)
-
-    @property
-    def params(self):
-        return self.scope_subctx("/params", "params")
-
-
-class CommandContext(Context):
-    def field(self, field_name):
-        ctx_name = "field({})".format(field_name)
-        return self.scope_item_subctx("/fields", field_name, ctx_name)
-
-    @property
-    def fields(self):
-        return self.scope_subctx("/fields", "fields")
-
-    def add_fields(self, fields_dict):
-        self.append(add_fields(fields_dict))
-        return self
-
-    def define_as(self, definition):
-        self.append(define_as, definition).or_error()
-        return self
