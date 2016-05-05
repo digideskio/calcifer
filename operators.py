@@ -9,7 +9,6 @@ use the operators in `dramafever.premium.commands` and not this module.
 """
 from pymonad import List
 
-from dramafever.premium.services.policy.exceptions import PolicyException
 from dramafever.premium.services.policy.monads import (
     policy_rule_func, get_call_repr
 )
