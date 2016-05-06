@@ -23,6 +23,7 @@ any number of templates, including zero. This is realized as:
     runStateT(initial_state) -> [(computation_result_value, new_state)]
 """
 from abc import ABCMeta
+import copy
 import inspect
 import logging
 from pymonad import Monad
@@ -119,6 +120,9 @@ def policyM(m):
             if self.ast:
                 return "<PolicyRule: {}>".format(repr(self.ast))
             return super(PolicyRule, self).__repr__()
+
+        def __deepcopy__(self, memo):
+            return copy.copy(self)
 
         def bind(self, rule_func):
             if isinstance(rule_func, BasePolicyRule):

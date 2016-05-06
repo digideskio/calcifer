@@ -190,6 +190,6 @@ class ContextFrame(object):
     def __repr__(self):
         return "<policy '{}'>".format(self.name)
 
-
-
-
+    def __deepcopy__(self, memo):
+        # you get a new object but you're not copying that AST
+        return ContextFrame(self.name, self.policy_ast)

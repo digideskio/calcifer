@@ -1,4 +1,5 @@
 from abc import ABCMeta
+import copy
 import re
 
 def get_call_repr(func_name, *args, **kwargs):
@@ -18,6 +19,8 @@ def get_call_repr(func_name, *args, **kwargs):
 class Node:
     __metaclass__ = ABCMeta
 
+    def __deepcopy__(self, memo):
+        return copy.copy(self)
 
 class Binding(Node):
     def __init__(self, left, right):
