@@ -91,7 +91,7 @@ class Context(BaseContext):
             lambda policy_rules: (
                 lambda true_scope: (
                     regarding(
-                        "{}".format(scope),
+                        "{}".format(true_scope),
                         *policy_rules
                     )
                 )
@@ -103,7 +103,8 @@ class Context(BaseContext):
 
         return subctx
 
-    select = scope_subctx
+    def select(self, scope):
+        return self.scope_subctx(scope, 'select("{}")'.format(scope))
 
     def kwarg(self, kwarg_name):
         ctx_name = "kwarg({})".format(kwarg_name)
@@ -178,3 +179,20 @@ class Context(BaseContext):
         )
         subctx.append(last)
         return self
+
+    def scope(self):
+        self.append(scope())
+        return self
+
+    def each(self, **kwargs):
+        eachctx = self.named_subctx(
+            "each",
+            lambda policy_rules: (
+                children() >>
+                each(
+                    *policy_rules, **kwargs
+                )
+            )
+        )
+
+        return eachctx
