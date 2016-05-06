@@ -81,10 +81,14 @@ class BaseContext(object):
         self.ctx_name = kwargs.get('name', None)
 
         if wrapper is None:
-            wrapper = lambda policy_rules: unless_errors(*policy_rules)
+            wrapper = self.__class__.get_default_wrapper()
 
         self.wrapper = wrapper
         self.ctx_args = ctx_args
+
+    @staticmethod
+    def get_default_wrapper():
+        return lambda policy_rules: unless_errors(*policy_rules)
 
     @staticmethod
     def is_policy_rule(value):

@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, attempt, select, trace, append_value,
-    forbid_value,
+    forbid_value, get_node,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -41,9 +41,9 @@ class Context(BaseContext):
     def resource_id(self):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
-    def require(self):
+    def require(self, value=get_node()):
         subctx = self.named_subctx("require")
-        subctx.append(require_value()).or_error()
+        subctx.append(require_value, value).or_error()
         return subctx
 
     def forbid(self):
