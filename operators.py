@@ -124,7 +124,7 @@ def make_children(m):
         def for_partial(partial):
             node, _ = partial.select("")
             if not hasattr(node, 'nodes'):
-                return m.unit( (None, partial) )
+                return m.unit( ([], partial) )
 
             return m.unit( (node.nodes.keys(), partial) )
         return for_partial
