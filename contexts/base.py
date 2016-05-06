@@ -1,4 +1,5 @@
-import types
+import copy
+import functools
 
 from dramafever.premium.services.policy import (
     unless_errors, wrap_context,
@@ -47,6 +48,122 @@ def ctx_apply(f, got, remaining):
 
     # a regular, plain-ol' value!? bam. lists.
     return ctx_apply(f, got+[first], rest)
+
+
+def wrap_ctx_values(action, args):
+    """
+    Run some function `action` on args that may be ContextualValues
+    (Values provided by a Context's wrapper)
+    """
+    missing_args = get_missing(args)
+    if missing_args:
+        return make_incomplete(
+            action,
+            args,
+            missing_args
+        )
+
+    return action(args)
+
+
+def get_missing(args):
+    """
+    Determine which args are missing obtainable values
+    """
+    missing_args = set()
+    for arg in args:
+        if isinstance(arg, ContextualValue):
+            missing_args.add(arg)
+        if isinstance(arg, Incomplete):
+            missing_args.update(arg.missing)
+
+    return missing_args
+
+
+def make_incomplete(f, args_, missing_args):
+    """
+    Make a function that takes a dictionary of {ctx_value: true_value}s
+    and maps to f(*args) in the right order.
+    """
+    @functools.wraps(f)
+    def complete(true_values):
+        args = []
+        for arg in args_:
+            if isinstance(arg, ContextualValue):
+                args.append(true_values[arg])
+            elif isinstance(arg, Incomplete):
+                got = {
+                    ctx_value: true_values[ctx_value]
+                    for ctx_value in arg.missing
+                }
+                args.append(arg.complete(got))
+            else:
+                args.append(arg)
+
+        return f(tuple(args))
+
+    incomplete = Incomplete(
+        func=complete,
+        missing=missing_args
+    )
+
+    return incomplete
+
+
+class ContextualValue(object):
+    """
+    A value that exists in transmission between policy operators.
+    Specifically, a value provided by some Context wrapper.
+
+    For instance:
+
+    ctx.each() becomes:
+       children() >> each( ... )
+
+    And inside that `each( ... )` is information (field value) that is
+    not obtainable elsewhere (due to generic name of `each`)
+    """
+    def __init__(self, ctx):
+        self.ctx = ctx
+
+    def __hash__(self):
+        return hash(self.ctx)
+
+    def __eq__(self, other):
+        return isinstance(other, ContextualValue) and self.ctx == other.ctx
+
+    def __ne__(self, other):
+        return not(self == other)
+
+
+class Incomplete(object):
+    def __init__(self, func, missing, got=None):
+        self.missing = missing
+        if got is None:
+            got = {}
+        self.got = got
+        self.func = func
+
+    def complete(self, true_values):
+        got = copy.copy(self.got)
+        missing = copy.copy(self.missing)
+
+        got.update(true_values)
+        missing -= set(true_values.keys())
+
+        if not missing:
+            return self.func(got)
+
+        return Incomplete(
+            func=self.func,
+            missing=missing,
+            got=got
+        )
+
+    def __repr__(self):
+        return (
+            "Incomplete(missing={})"
+        ).format(set([missing.ctx for missing in self.missing]))
 
 
 class BaseContext(object):
@@ -98,6 +215,10 @@ class BaseContext(object):
     def is_policy_rule_func(value):
         return isinstance(value, PolicyRuleFunc)
 
+    @property
+    def value(self):
+        return ContextualValue(self)
+
     def append(self, item, *args):
         """
         Append a policy operation to the Context.
@@ -106,13 +227,15 @@ class BaseContext(object):
         are supplied, use ctx_apply to create a "promise" and append
         that instead.
         """
-        if (
-                type(item) == types.FunctionType or
-                self.is_policy_rule_func(item)
-        ):
-            self.items.append(ctx_apply(item, [], args))
-        else:
+        if not args:
             self.items.append(item)
+        else:
+            self.items.append(
+                wrap_ctx_values(
+                    lambda args: ctx_apply(item, [], args),
+                    args
+                )
+            )
         return self
 
     def finalize(self):
@@ -120,9 +243,84 @@ class BaseContext(object):
         Performs all syntactic manipulations to subcontexts and contained
         policy rules and returns a single policy rule aggregate.
         """
-        wrapped = self.wrap(self.finalized_items)
+        finalized_items = self.get_finalized_items()
+        wrapped = self.wrap(finalized_items)
 
         return wrapped
+
+    def get_finalized_items(self):
+        return [
+            self._finalize_item(item, getattr(self, 'value', None))
+            for item in self.items
+            if self._warrants_inclusion(item)
+        ]
+
+    @classmethod
+    def _finalize_item(cls, item, provided_ctx_value=None):
+        finalize_item = cls._finalize_item
+
+        if hasattr(item, 'finalize'):
+            return finalize_item(item.finalize(), provided_ctx_value)
+        if isinstance(item, Incomplete) and provided_ctx_value in item.missing:
+            def make_appended_func(item, ctx_value):
+                @functools.wraps(item.func)
+                def appended_func(value):
+                    return item.complete({ctx_value: value})
+                return appended_func
+
+            def make_incomplete_func(item, ctx_value):
+                @functools.wraps(item.func)
+                def incomplete_func(true_values):
+                    missing_one = item.complete(true_values)
+                    return make_appended_func(missing_one, ctx_value)
+                return incomplete_func
+
+
+            missing = item.missing - set([provided_ctx_value])
+            if not missing:
+                return make_appended_func(item, provided_ctx_value)
+
+            return Incomplete(
+                func=make_incomplete_func(item, provided_ctx_value),
+                missing=missing
+            )
+        return item
+
+    def wrap(self, items):
+        def make_action(ctx_wrapper, ctx_name, num_ctx_args):
+            def action(items):
+                ctx_args = items[0:num_ctx_args]
+                items = items[num_ctx_args:]
+                wrapped = ctx_apply(ctx_wrapper(items), [], ctx_args)
+
+                if ctx_name:
+                    ctx_frame = ContextFrame(ctx_name, wrapped.ast)
+                    wrapped = wrap_context(ctx_frame, wrapped)
+                return wrapped
+            return action
+
+        action = make_action(
+            self.wrapper,
+            self.ctx_name,
+            len(self.ctx_args)
+        )
+
+        wrapped = wrap_ctx_values(
+            action,
+            self.ctx_args + tuple(items)
+        )
+        return wrapped
+
+    @staticmethod
+    def _warrants_inclusion(item):
+        """
+        Just to note, as an optimization, don't include policies for
+        subcontexts that contain no operations
+        """
+        if not hasattr(item, 'finalize'):
+            return True
+        subctx = item
+        return len(subctx.items) > 0
 
     def subctx(self, wrapper=None, *ctx_args):
         """
@@ -145,41 +343,6 @@ class BaseContext(object):
         sub.ctx_name = name
         self.append(sub)
         return sub
-
-    def wrap(self, items):
-        wrapped = ctx_apply(self.wrapper(items), [], self.ctx_args)
-        # if the Context has the ctx_name property, wrap the final policy
-        # rule in a `wrap_context` operator.
-        if self.ctx_name:
-            ctx_frame = ContextFrame(self.ctx_name, wrapped.ast)
-
-            wrapped = wrap_context(ctx_frame, wrapped)
-        return wrapped
-
-    @property
-    def finalized_items(self):
-        return [
-            self._finalize_item(item)
-            for item in self.items
-            if self._warrants_inclusion(item)
-        ]
-
-    @staticmethod
-    def _finalize_item(item):
-        if hasattr(item, 'finalize'):
-            return item.finalize()
-        return item
-
-    @staticmethod
-    def _warrants_inclusion(item):
-        """
-        Just to note, as an optimization, don't include policies for
-        subcontexts that contain no operations
-        """
-        if not hasattr(item, 'finalize'):
-            return True
-        subctx = item
-        return len(subctx.items) > 0
 
 
 class ContextFrame(object):
