@@ -356,7 +356,7 @@ given = make_given(List)
 
 def make_each(m):
     unit = make_unit(m)
-    def each(rule_func, **kwargs):
+    def each(*rule_funcs, **kwargs):
         """
         `each(rule_func)` is a policy rule function that accepts a
         dictionary and calls `rule_func(value)` successively, with the
@@ -370,18 +370,22 @@ def make_each(m):
 
         def for_keys(keys):
             @policy_rule_func(m)
-            def each_step(key):
-                if ref_obj:
+            def each_step(key, rule_func):
+                if ref_obj is not None:
                     value = ref_obj.get(key)
                     return (
                         regarding(key, unit(value) >> rule_func)
                     )
                 return regarding(key, rule_func)
 
-            steps = [each_step(key) for key in keys]
+            steps = [
+                each_step(key, rule_func)
+                for rule_func in rule_funcs
+                for key in keys
+            ]
             return regarding("", *steps)
 
-        each_rule_func_name = get_call_repr("each", rule_func, **kwargs)
+        each_rule_func_name = get_call_repr("each", *rule_funcs, **kwargs)
         return policy_rule_func(m, each_rule_func_name)(for_keys)
     return each
 each = make_each(List)
