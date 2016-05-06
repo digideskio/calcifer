@@ -89,7 +89,7 @@ class Identity(Monad):
         return Identity(value)
 
     def fmap(self, function):
-        return super(Identity, self).fmap(function)
+        return self.__class__(function(self.value))
 
     def amap(self, function):
         return super(Identity, self).amap(function)

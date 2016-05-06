@@ -10,7 +10,9 @@ use the operators in `dramafever.premium.commands` and not this module.
 from pymonad import List
 
 from dramafever.premium.services.policy.monads import (
-    policy_rule_func, get_call_repr
+    policy_rule_func, get_call_repr,
+
+    PolicyRule
 )
 
 
@@ -208,8 +210,6 @@ check = make_check(List)
 #
 
 def make_policies(m):
-    path = make_path(m)
-    set_path = make_set_path(m)
     unit = make_unit(m)
 
     @policy_rule_func(m)
@@ -221,12 +221,22 @@ def make_policies(m):
         """
         @policy_rule_func(m)
         def policy_step(rule):
-            return (
-                path() >> (lambda old_path:
-                unit(None) >>
-                rule >>
-                set_path(old_path)
-            ))
+            def for_partial(partial):
+                original_scope = partial.scope
+                if isinstance(rule, PolicyRule):
+                    results = rule(partial)
+                else:
+                    results = rule(None)(partial)
+
+                def for_result(result):
+                    _, partial = result
+                    _, rescoped_partial = partial.select(
+                        original_scope, set_path=True
+                    )
+                    return None, rescoped_partial
+
+                return results.fmap(for_result)
+            return for_partial
 
         op = unit(None)
         for rule in rules:
@@ -238,9 +248,7 @@ policies = make_policies(List)
 
 
 def make_regarding(m):
-    path = make_path(m)
     select = make_select(m)
-    set_path = make_set_path(m)
     unit = make_unit(m)
     unit_value = make_unit_value(m)
 
@@ -258,14 +266,25 @@ def make_regarding(m):
         """
         @policy_rule_func(m)
         def regarding_step(rule_func):
-            return (
-                path() >> (lambda old_path:
-                select(selector, set_path=True) >> (lambda node:
-                unit(node) >>
-                rule_func >>
-                set_path(old_path) >>
-                unit_value(node)))
-            )
+            def for_partial(partial):
+                original_scope = partial.scope
+                node, inner_partial = partial.select(selector, set_path=True)
+                value = node.value
+                if not value:
+                    value = node
+                if isinstance(rule_func, PolicyRule):
+                    results = rule_func(inner_partial)
+                else:
+                    results = rule_func(value)(inner_partial)
+                def for_result(result):
+                    _, partial = result
+                    _, rescoped_partial = partial.select(
+                        original_scope, set_path=True
+                    )
+                    return value, rescoped_partial
+
+                return results.fmap(for_result)
+            return for_partial
 
         if rule_funcs:
             op = unit(None)
