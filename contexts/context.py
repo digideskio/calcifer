@@ -186,15 +186,9 @@ class Context(BaseContext):
 
     def or_error(self):
         last = self.items.pop()
-        subctx = self.subctx(
-            lambda policy_rules: (
-                attempt(
-                    *policy_rules,
-                    catch=trace() >> add_error
-                )
-            )
-        )
-        subctx.append(last)
+        attempt_ctx, catch_ctx = self.attempt_catch()
+        catch_ctx.append(add_error, catch_ctx.value)
+        attempt_ctx.append(last)
         return self
 
     def scope(self):
