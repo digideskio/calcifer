@@ -595,34 +595,51 @@ unless_errors = make_unless_errors(List)
 
 
 def make_trace(m):
-    scope = make_scope(m)
-    get_value = make_get_value(m)
-    select = make_select(m)
     unit = make_unit(m)
-    unit_value = make_unit_value(m)
 
     @policy_rule_func(m)
-    def trace():
+    def trace(*rule_funcs):
         """
         Collates the current scope, the current node's value,
         and the current policy context and returns it as a dict
         """
-        return scope() >> (
-            lambda scope: (
-                get_value() >> (
-                    lambda value: (
-                        select("/context") >> unit_value >> (
-                            lambda context: (
-                                unit({
-                                    "scope": scope,
-                                    "context": context,
-                                    "value": value
-                                })
-                            )
-                        )
+        @policy_rule_func(m)
+        def trace_step(rule_func):
+            def for_partial(partial):
+                # collect information
+                scope = partial.scope
+                value = partial.scope_value
+                context_node, _ = partial.select("/context")
+                context = context_node.value
+
+                # build obj that gets passed to rule_func
+                trace_obj = {
+                    "scope": scope,
+                    "value": value,
+                    "context": context,
+                }
+
+                # run rule_func
+                results = rule_func(trace_obj)(partial)
+
+                # rescope partial for next step
+                def for_result(result):
+                    value, partial = result
+                    _, rescoped_partial = partial.select(
+                        scope, set_path=True
                     )
-                )
-            )
-        )
+                    return value, rescoped_partial
+
+                return results.fmap(for_result)
+            return for_partial
+
+        if not rule_funcs:
+            rule_funcs = [unit]
+
+        op = unit(None)
+        for rule_func in rule_funcs:
+            op = op >> trace_step(rule_func)
+
+        return op
     return trace
 trace = make_trace(List)
