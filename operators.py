@@ -224,6 +224,42 @@ check = make_check(List)
 # Control Structures
 #
 
+def make_collect(m):
+    unit = make_unit(m)
+    def collect(*rule_funcs):
+        def make_collect_step(value):
+            @policy_rule_func(m)
+            def collect_step(rule_func):
+                def for_partial(partial):
+                    # got it? good.
+                    scope = partial.scope
+                    results = rule_func(value)(partial)
+
+                    # now whatever results are returned, accounting
+                    # for non-determinism, rescope the partials so
+                    # they get the original scope
+                    def for_result(result):
+                        value, partial = result
+                        _, rescoped_partial = partial.select(
+                            scope, set_path=True
+                        )
+                        return value, rescoped_partial
+                    return results.fmap(for_result)
+                return for_partial
+            return collect_step
+
+        def for_any(value):
+            op = unit(value)
+            collect_step = make_collect_step(value)
+            for rule_func in rule_funcs:
+                op = op >> collect_step(rule_func)
+            return op
+
+        collect_func_name = get_call_repr('collect', *rule_funcs)
+        return policy_rule_func(m, collect_func_name)(for_any)
+    return collect
+collect = make_collect(List)
+
 def make_policies(m):
     unit = make_unit(m)
 
