@@ -167,6 +167,23 @@ class Context(BaseContext):
         subctx.append(permit_values, values).or_error()
         return subctx
 
+    def attempt_catch(self):
+        def attempt_wrapper(policy_rules):
+            catch_rule = policy_rules[0]
+            policy_rules = policy_rules[1:]
+            return attempt(
+                *policy_rules,
+                catch=catch_rule
+            )
+
+        attempt_ctx = self.subctx(attempt_wrapper)
+        catch = attempt_ctx.trace()
+
+        return attempt_ctx, catch
+
+    def trace(self):
+        return self.subctx(lambda policy_rules: trace(*policy_rules))
+
     def or_error(self):
         last = self.items.pop()
         subctx = self.subctx(
