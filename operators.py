@@ -156,7 +156,17 @@ def make_append_value(m):
         Gets the value at the current node, and, assuming it to be a list,
         appends `value`
         """
-        return get_value() >> (lambda values: set_value(values + [value]))
+        def append_to(collection):
+            if isinstance(collection, list):
+                return collection + [value]
+            elif isinstance(collection, set) or isinstance(collection, frozenset):
+                return collection | frozenset([value])
+            else:
+                raise NotImplementedError
+
+        return get_value() >> (lambda collection:
+            set_value(append_to(collection))
+        )
     return append_value
 append_value = make_append_value(List)
 
