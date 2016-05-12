@@ -1,3 +1,6 @@
+import random
+import logging
+
 from django.test import TestCase
 
 from dramafever.premium.services.tests.utils import run_policy
@@ -12,6 +15,8 @@ from dramafever.premium.services.policy import (
 
     asts, PolicyRule
 )
+
+logger = logging.getLogger(__name__)
 
 class ContextTestCase(TestCase):
     def test_append_policy(self):
@@ -335,3 +340,91 @@ class ContextTestCase(TestCase):
 
         result = run_policy(ctx.finalize(), {"a": -3})
         self.assertEquals(result['b'], -2)
+
+    def test_apply_alchemy(self):
+        # for our test today, we will be doing some basic alchemy
+        material_names = [
+            "aqua fortis",
+            "glauber's salt",
+            "lunar caustic",
+            "mosaic gold",
+            "plumbago",
+            "salt",
+            "tin salt",
+            "butter of tin",
+            "stibnite",
+            "naples yellow",
+        ]
+
+        # backstory:
+        # ~~~~~~~~~~
+        #
+        # falling asleep last night, you finally figured out how to complete
+        # your life's work: discovering the elusive *elixir of life*!
+        #
+        # and it's only two ingredients! and you have them on hand!
+        #
+        # ...
+        #
+        # unfortunately this morning you can't remember which two
+        # ingredients it was.
+        #
+        # you'll know it once you've gotten it, just have to try out
+        # all possible mixtures. (should be safe enough, right?)
+
+        forgotten_elixir_of_life = set(random.sample(material_names, 2))
+
+        inventory = {
+            str(idx): name
+            for idx, name in enumerate(material_names)
+        } # (implementor's note: this is a dict because ctx.each() does
+          #  not currently support lists)
+
+        discoveries_today = set(["frantic worry", "breakfast"])
+
+        # ok time to go do some arbitrary alchemy!
+        #
+        # game plan:
+        alchemy_ctx = Context()
+
+        # you'll grab one ingredient,
+        selected_first_ctx = alchemy_ctx.select("/inventory").each()
+        first_substance = selected_first_ctx.value
+
+        # and another,
+        selected_second_ctx = selected_first_ctx.select("/inventory").each()
+        second_substance = selected_second_ctx.value
+
+        # take them to your advanced scientific mixing equipment,
+        workstation_ctx = selected_second_ctx.select("/workstation")
+
+        # (btw this is your advanced scientific procedure that you are
+        # 100% certain will tell you what some mixture is)
+        def mix(first, second):
+            """takes two ingredients and returns the resulting substance"""
+            if set([first, second]) == forgotten_elixir_of_life:
+                return "elixir of life"
+            return "some kind of brown goo"
+
+        # then you'll mix your ingredients...
+        mixed_ctx = workstation_ctx.apply(mix,
+            first_substance, second_substance
+        )
+        resulting_mixture = mixed_ctx.value
+
+        # ... and! in today's modern age, scientists now know to record their
+        # results!
+        mixed_ctx.select("/discoveries").append_value(resulting_mixture)
+
+        # got it? good!
+        result = run_policy(
+            alchemy_ctx.finalize(),
+            {"inventory": inventory, "discoveries": discoveries_today}
+        )
+
+        # in a flurry of excitement, i bet you didn't even stop to
+        # look at your discoveries as you made them!
+        #
+        # well, let's see...
+
+        self.assertIn("elixir of life", result["discoveries"])
