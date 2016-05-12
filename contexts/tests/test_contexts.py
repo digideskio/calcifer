@@ -309,3 +309,29 @@ class ContextTestCase(TestCase):
 
         result = run_policy(ctx.finalize(), {"a": 5})
         self.assertEquals(result['b'], 7)
+
+    def test_apply(self):
+        ctx = Context(name="root")
+        a = ctx.select("/a")
+        b = a.select("/b")
+
+        def increment(x):
+            return x + 1
+
+        # the value only exists inside the context of the function
+        # application
+        applied_ctx = b.apply(increment, a.value)
+        applied_ctx.set_value(applied_ctx.value)
+
+        result = run_policy(ctx.finalize(), {"a": 5})
+        self.assertEquals(result['b'], 6)
+
+        # and just for calisthenics, do it in a different order
+        ctx = Context(name="root")
+        a = ctx.select("/a")
+        applied_ctx = a.apply(increment, a.value)
+        b = applied_ctx.select("/b")
+        b.set_value(applied_ctx.value)
+
+        result = run_policy(ctx.finalize(), {"a": -3})
+        self.assertEquals(result['b'], -2)

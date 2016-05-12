@@ -195,6 +195,17 @@ class Context(BaseContext):
         self.append(scope())
         return self
 
+    def apply(self, func, *args):
+        apply_ctx = self.subctx(
+            lambda policy_rules: (
+                lambda *true_args: (
+                    collect(*policy_rules)(func(*true_args))
+                )
+            ),
+            *args
+        )
+        return apply_ctx
+
     def each(self, **kwargs):
         eachctx = self.named_subctx(
             "each",
