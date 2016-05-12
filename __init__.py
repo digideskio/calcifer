@@ -9,11 +9,13 @@ manipulation of a "Policy Partial" data structure to be used in validation and
 template generation. The operators are designed to provide flexible
 tooling for the creation of high-level policy rules.
 """
+from dramafever.premium.services.policy.contexts import Context
 from dramafever.premium.services.policy.operators import (
     attempt,
     append_value,
     check,
     children,
+    collect,
     define_as,
     each,
     fail,

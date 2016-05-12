@@ -1,4 +1,4 @@
-from dramafever.premium.services.policy import (
+from dramafever.premium.services.policy.operators import (
     regarding, set_value, select, unit_value,
 )
 

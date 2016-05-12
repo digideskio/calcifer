@@ -1,7 +1,7 @@
-from dramafever.premium.services.policy import (
+from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, attempt, select, trace, append_value,
-    forbid_value, get_node, children, each, scope,
+    forbid_value, get_node, children, each, scope, collect,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
