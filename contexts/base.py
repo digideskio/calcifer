@@ -2,7 +2,7 @@ import copy
 import functools
 
 from dramafever.premium.services.policy.operators import (
-    unless_errors, wrap_context,
+    unless_errors, wrap_context, attempt, trace, collect,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc
@@ -344,6 +344,44 @@ class BaseContext(object):
         sub.ctx_name = name
         self.append(sub)
         return sub
+
+    def attempt_catch(self):
+        def attempt_wrapper(policy_rules):
+            catch_rule = policy_rules[0]
+            policy_rules = policy_rules[1:]
+            return attempt(
+                *policy_rules,
+                catch=catch_rule
+            )
+
+        attempt_ctx = self.subctx(attempt_wrapper)
+        catch = attempt_ctx.trace()
+
+        return attempt_ctx, catch
+
+    def trace(self):
+        return self.subctx(lambda policy_rules: trace(*policy_rules))
+
+    def or_catch(self):
+        """
+        Rebuild items so that the last thing was actually done in an
+        attempt/catch context
+        """
+        last = self.items.pop()
+        attempt_ctx, catch_ctx = self.attempt_catch()
+        attempt_ctx.append(last)
+        return catch_ctx
+
+    def apply(self, func, *args):
+        apply_ctx = self.subctx(
+            lambda policy_rules: (
+                lambda *true_args: (
+                    collect(*policy_rules)(func(*true_args))
+                )
+            ),
+            *args
+        )
+        return apply_ctx
 
 
 class ContextFrame(object):

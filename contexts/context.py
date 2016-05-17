@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
-    select, check, require_value, attempt, select, trace, append_value,
-    forbid_value, get_node, children, each, scope, collect,
+    select, check, require_value, select, append_value,
+    forbid_value, get_node, children, each, scope,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -167,44 +167,15 @@ class Context(BaseContext):
         subctx.append(permit_values, values).or_error()
         return subctx
 
-    def attempt_catch(self):
-        def attempt_wrapper(policy_rules):
-            catch_rule = policy_rules[0]
-            policy_rules = policy_rules[1:]
-            return attempt(
-                *policy_rules,
-                catch=catch_rule
-            )
-
-        attempt_ctx = self.subctx(attempt_wrapper)
-        catch = attempt_ctx.trace()
-
-        return attempt_ctx, catch
-
-    def trace(self):
-        return self.subctx(lambda policy_rules: trace(*policy_rules))
-
-    def or_error(self):
-        last = self.items.pop()
-        attempt_ctx, catch_ctx = self.attempt_catch()
-        catch_ctx.append(add_error, catch_ctx.value)
-        attempt_ctx.append(last)
-        return self
-
     def scope(self):
         self.append(scope())
         return self
 
-    def apply(self, func, *args):
-        apply_ctx = self.subctx(
-            lambda policy_rules: (
-                lambda *true_args: (
-                    collect(*policy_rules)(func(*true_args))
-                )
-            ),
-            *args
-        )
-        return apply_ctx
+    def or_error(self):
+        catch_ctx = self.or_catch()
+        catch_ctx.append(add_error, catch_ctx.value)
+        return self
+
 
     def each(self, **kwargs):
         eachctx = self.named_subctx(
