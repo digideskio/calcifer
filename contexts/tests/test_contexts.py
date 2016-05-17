@@ -374,11 +374,7 @@ class ContextTestCase(TestCase):
 
         forgotten_elixir_of_life = set(random.sample(material_names, 2))
 
-        inventory = {
-            str(idx): name
-            for idx, name in enumerate(material_names)
-        } # (implementor's note: this is a dict because ctx.each() does
-          #  not currently support lists)
+        inventory = _take_alchemical_inventory(material_names)
 
         discoveries_today = set(["frantic worry", "breakfast"])
 
@@ -428,3 +424,105 @@ class ContextTestCase(TestCase):
         # well, let's see...
 
         self.assertIn("elixir of life", result["discoveries"])
+
+    def test_apply_dangerous_alchemy(self):
+        # nice job! and you even finished in time to go foraging for
+        # more ingredients!
+        material_names = [
+            "aqua fortis",
+            "glauber's salt",
+            "lunar caustic",
+            "mosaic gold",
+            "plumbago",
+            "salt",
+            "tin salt",
+            "butter of tin",
+            "stibnite",
+            "naples yellow",
+
+            # nice find
+            "anti-plumbago"
+        ]
+
+        inventory = {
+            str(idx): name
+            for idx, name in enumerate(material_names)
+        }
+
+        # but unfortunately, it's the next day, and the same thing
+        # has happened to you! except this time it was for your
+        # other life's goal: discover the ~elixir of discord~!
+        #
+        # well, since it was so easy...
+
+        whatever_concoction = set(['some ingredients'])
+
+        discoveries_today = set([])
+        should_be_fine = 'overconfidence' not in discoveries_today
+        assert should_be_fine
+
+        # doing alchemy la la la
+        alchemy_ctx = Context()
+
+        # grabbin' things off shelves
+        selected_first_ctx = alchemy_ctx.select("/inventory").each()
+        first_substance = selected_first_ctx.value
+
+        selected_second_ctx = selected_first_ctx.select("/inventory").each()
+        second_substance = selected_second_ctx.value
+
+        # got our ingredients
+        got_ingredients_ctx = selected_second_ctx
+
+        workstation_ctx = got_ingredients_ctx.select("/workstation")
+
+        # mixin' - don't stop to think
+        def mix(first, second):
+            mixture = set([first, second])
+            if mixture == whatever_concoction:
+                return 'missing elixir'
+            if mixture == set(['plumbago', 'anti-plumbago']):
+                return 'concentrated danger'
+            return 'more brown goo'
+
+        mixed_ctx = workstation_ctx.apply(mix,
+            first_substance, second_substance
+        )
+        resulting_mixture = mixed_ctx.value
+
+        mixed_ctx.select("/discoveries").append_value(resulting_mixture)
+
+        # wait wait wait!!
+        def danger(mixture):
+            print "mixture: {}".format(mixture)
+            if mixture == 'concentrated danger':
+                return True
+            return False
+
+        # we can't have that.
+        danger_ctx = mixed_ctx.check(danger,
+            resulting_mixture
+        )
+        danger_ctx.forbid()
+
+        # moral:
+        #
+        # a strong understanding of policies and processes facilitates a
+        # hazard-free lab environment.
+        result = run_policy(
+            alchemy_ctx.finalize(),
+            {"inventory": inventory, "discoveries": discoveries_today}
+        )
+
+        self.assertIn("errors", result)
+        self.assertEquals(1, len(result['errors']))
+
+
+def _take_alchemical_inventory(material_names):
+    # implementor's note: this is a dict because ctx.each() does
+    # not currently support lists
+    inventory = {
+        str(idx): name
+        for idx, name in enumerate(material_names)
+    }
+    return inventory
