@@ -2,7 +2,8 @@ import copy
 import functools
 
 from dramafever.premium.services.policy.operators import (
-    unless_errors, wrap_context, attempt, trace, collect, unit,
+    unless_errors, wrap_context, attempt, trace, collect, unit, policies,
+    regarding,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc
@@ -395,6 +396,61 @@ class BaseContext(object):
             *args
         )
         return apply_ctx
+
+    def check(self, func, *func_args):
+        def make_check_wrapper(func):
+            def check_wrapper(policy_rules):
+                def eval_wrapper(*true_func_args):
+                    func_result = func(*true_func_args)
+                    if func_result:
+                        return unit(func_result) >> collect(*policy_rules)
+                    else:
+                        return policies()
+                return eval_wrapper
+            return check_wrapper
+
+        ctx_name = "check({})".format(func.__name__)
+        subctx = self.named_subctx(ctx_name,
+            make_check_wrapper(func), *func_args
+        )
+        return subctx
+
+    def scope_item_subctx(self, parent, child, name=None):
+        subctx = self.subctx(
+            lambda policy_rules: (
+                lambda parent_name, child_name: (
+                    regarding(
+                        "{}/{}".format(parent_name, child_name),
+                        *policy_rules
+                    )
+                )
+            ),
+            parent, child
+        )
+
+        if name is not None:
+            subctx.ctx_name = name
+
+        return subctx
+
+    def scope_subctx(self, scope, name=None):
+        subctx = self.subctx(
+            lambda policy_rules: (
+                lambda true_scope: (
+                    regarding(
+                        "{}".format(true_scope),
+                        *policy_rules
+                    )
+                )
+            ),
+            scope
+        )
+        if name is not None:
+            subctx.ctx_name = name
+        return subctx
+
+    def select(self, scope):
+        return self.scope_subctx(scope, 'select("{}")'.format(scope))
 
     def __repr__(self):
         return (

@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, select, append_value,
-    forbid_value, get_node, children, each, scope, unit, collect,
+    forbid_value, get_node, children, each, scope,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -50,62 +50,6 @@ class Context(BaseContext):
         subctx = self.named_subctx("forbid")
         subctx.append(forbid_value, self.value).or_error()
         return subctx
-
-    def check(self, func, *func_args):
-        def make_check_wrapper(func):
-            def check_wrapper(policy_rules):
-                def eval_wrapper(*true_func_args):
-                    func_result = func(*true_func_args)
-                    if func_result:
-                        return unit(func_result) >> collect(*policy_rules)
-                    else:
-                        return policies()
-                return eval_wrapper
-            return check_wrapper
-
-        ctx_name = "check({})".format(func.__name__)
-        subctx = self.named_subctx(ctx_name,
-            make_check_wrapper(func), *func_args
-        )
-        return subctx
-
-    def scope_item_subctx(self, parent, child, name=None):
-        subctx = self.subctx(
-            lambda policy_rules: (
-                lambda parent_name, child_name: (
-                    regarding(
-                        "{}/{}".format(parent_name, child_name),
-                        *policy_rules
-                    )
-                )
-            ),
-            parent, child
-        )
-
-        if name is not None:
-            subctx.ctx_name = name
-
-        return subctx
-
-    def scope_subctx(self, scope, name=None):
-        subctx = self.subctx(
-            lambda policy_rules: (
-                lambda true_scope: (
-                    regarding(
-                        "{}".format(true_scope),
-                        *policy_rules
-                    )
-                )
-            ),
-            scope
-        )
-        if name is not None:
-            subctx.ctx_name = name
-
-        return subctx
-
-    def select(self, scope):
-        return self.scope_subctx(scope, 'select("{}")'.format(scope))
 
     def kwarg(self, kwarg_name):
         ctx_name = "kwarg({})".format(kwarg_name)
