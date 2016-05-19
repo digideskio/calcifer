@@ -494,7 +494,6 @@ class ContextTestCase(TestCase):
 
         # wait wait wait!!
         def danger(mixture):
-            print "mixture: {}".format(mixture)
             if mixture == 'concentrated danger':
                 return True
             return False

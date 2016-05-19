@@ -243,7 +243,7 @@ def make_collect(m):
                 def for_partial(partial):
                     # got it? good.
                     scope = partial.scope
-                    results = rule_func(value)(partial)
+                    results = (unit(value) >> rule_func)(partial)
 
                     # now whatever results are returned, accounting
                     # for non-determinism, rescope the partials so
@@ -272,6 +272,7 @@ collect = make_collect(List)
 
 def make_policies(m):
     unit = make_unit(m)
+    collect = make_collect(m)
 
     @policy_rule_func(m)
     def policies(*rules):
@@ -280,30 +281,7 @@ def make_policies(m):
         applies each in turn, keeping scope constant for each. (By resetting
         the path each time)
         """
-        @policy_rule_func(m)
-        def policy_step(rule):
-            def for_partial(partial):
-                original_scope = partial.scope
-                if isinstance(rule, PolicyRule):
-                    results = rule(partial)
-                else:
-                    results = rule(None)(partial)
-
-                def for_result(result):
-                    _, partial = result
-                    _, rescoped_partial = partial.select(
-                        original_scope, set_path=True
-                    )
-                    return None, rescoped_partial
-
-                return results.fmap(for_result)
-            return for_partial
-
-        op = unit(None)
-        for rule in rules:
-            op = op >> policy_step(rule)
-
-        return op
+        return collect(*rules)(None)
     return policies
 policies = make_policies(List)
 
@@ -333,6 +311,8 @@ def make_regarding(m):
                 value = node.value
                 if not value:
                     value = node
+                print "rule_func: {}".format(rule_func)
+
                 if isinstance(rule_func, PolicyRule):
                     results = rule_func(inner_partial)
                 else:
@@ -604,10 +584,8 @@ require_value = make_require_value(List)
 
 
 def make_forbid_value(m):
-    get_node = make_get_node(m)
-
     @policy_rule_func(m)
-    def forbid_value():
+    def forbid_value(node):
         """
         Returns an mzero (empty list, e.g.) if the provided node
         is missing a value
@@ -616,13 +594,14 @@ def make_forbid_value(m):
             select("/does/not/exist") >> forbid_value
         returns []
         """
-        def for_node(node):
-            def for_partial(partial):
-                if node.value is not None:
-                    return m.mzero()
+        def for_partial(partial):
+            if isinstance(node, PolicyNode):
+                if node.value is None:
+                    return m.unit( (None, partial) )
+            if node is None:
                 return m.unit( (None, partial) )
-            return for_partial
-        return get_node() >> for_node
+            return m.mzero()
+        return for_partial
     return forbid_value
 forbid_value = make_forbid_value(List)
 

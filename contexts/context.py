@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, select, append_value,
-    forbid_value, get_node, children, each, scope,
+    forbid_value, get_node, children, each, scope, unit, collect,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -48,15 +48,20 @@ class Context(BaseContext):
 
     def forbid(self):
         subctx = self.named_subctx("forbid")
-        subctx.append(forbid_value()).or_error()
+        attempt_ctx, catch_ctx = subctx.attempt_catch()
+        print "forbid self: {}".format(self)
+        attempt_ctx.append(forbid_value, self.value)
+        catch_ctx.append(add_error, catch_ctx.value)
+
         return subctx
 
     def check(self, func, *func_args):
         def make_check_wrapper(func):
             def check_wrapper(policy_rules):
                 def eval_wrapper(*true_func_args):
-                    if func(*true_func_args):
-                        return policies(*policy_rules)
+                    func_result = func(*true_func_args)
+                    if func_result:
+                        return unit(func_result) >> collect(*policy_rules)
                     else:
                         return policies()
                 return eval_wrapper

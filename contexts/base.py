@@ -2,7 +2,7 @@ import copy
 import functools
 
 from dramafever.premium.services.policy.operators import (
-    unless_errors, wrap_context, attempt, trace, collect,
+    unless_errors, wrap_context, attempt, trace, collect, unit,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc
@@ -355,12 +355,19 @@ class BaseContext(object):
             )
 
         attempt_ctx = self.subctx(attempt_wrapper)
-        catch = attempt_ctx.trace()
+        catch = attempt_ctx.subctx().trace(attempt_ctx.value)
 
         return attempt_ctx, catch
 
-    def trace(self):
-        return self.subctx(lambda policy_rules: trace(*policy_rules))
+    def trace(self, value=None):
+        return self.subctx(
+            lambda policy_rules: (
+                lambda true_value: (
+                    unit(true_value) >> trace(*policy_rules)
+                )
+            ),
+            value
+        )
 
     def or_catch(self):
         """
@@ -382,6 +389,11 @@ class BaseContext(object):
             *args
         )
         return apply_ctx
+
+    def __repr__(self):
+        return (
+            "<{} name='{}'>"
+        ).format(self.__class__.__name__, self.ctx_name)
 
 
 class ContextFrame(object):
