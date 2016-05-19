@@ -48,9 +48,7 @@ class Context(BaseContext):
 
     def forbid(self):
         subctx = self.named_subctx("forbid")
-        attempt_ctx, catch_ctx = subctx.attempt_catch()
-        attempt_ctx.append(forbid_value, self.value)
-        catch_ctx.append(add_error, catch_ctx.value)
+        subctx.append(forbid_value, self.value).or_error()
 
         return subctx
 
