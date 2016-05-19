@@ -159,7 +159,7 @@ def make_append_value(m):
         def append_to(collection):
             if isinstance(collection, list):
                 return collection + [value]
-            elif isinstance(collection, set) or isinstance(collection, frozenset):
+            elif isinstance(collection, (set, frozenset)):
                 return collection | frozenset([value])
             else:
                 raise NotImplementedError
