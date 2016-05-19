@@ -380,7 +380,13 @@ class BaseContext(object):
         return catch_ctx
 
     def apply(self, func, *args):
-        apply_ctx = self.subctx(
+        if hasattr(func, '__name__'):
+            func_name = func.__name__
+        else:
+            func_name = '<anonymousfunction>'
+
+        apply_ctx = self.named_subctx(
+            "apply({})".format(func_name),
             lambda policy_rules: (
                 lambda *true_args: (
                     collect(*policy_rules)(func(*true_args))

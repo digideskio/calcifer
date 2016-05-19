@@ -514,7 +514,7 @@ class ContextTestCase(TestCase):
         )
 
         self.assertIn("errors", result)
-        self.assertEquals(1, len(result['errors']))
+        self.assertTrue(len(result['errors']))
 
 
 def _take_alchemical_inventory(material_names):
