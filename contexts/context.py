@@ -49,7 +49,6 @@ class Context(BaseContext):
     def forbid(self):
         subctx = self.named_subctx("forbid")
         subctx.append(forbid_value, self.value).or_error()
-
         return subctx
 
     def check(self, func, *func_args):
@@ -178,7 +177,6 @@ class Context(BaseContext):
         catch_ctx.append(add_error, catch_ctx.value)
         return self
 
-
     def each(self, **kwargs):
         eachctx = self.named_subctx(
             "each",
@@ -189,5 +187,4 @@ class Context(BaseContext):
                 )
             )
         )
-
         return eachctx

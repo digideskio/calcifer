@@ -18,6 +18,7 @@ from dramafever.premium.services.policy import (
 
 logger = logging.getLogger(__name__)
 
+
 class ContextTestCase(TestCase):
     def test_append_policy(self):
         ctx = Context()

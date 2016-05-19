@@ -276,7 +276,6 @@ class BaseContext(object):
                     return make_appended_func(missing_one, ctx_value)
                 return incomplete_func
 
-
             missing = item.missing - set([provided_ctx_value])
             if not missing:
                 return make_appended_func(item, provided_ctx_value)
@@ -289,6 +288,7 @@ class BaseContext(object):
 
     def wrap(self, items):
         def make_action(ctx_wrapper, ctx_name, num_ctx_args):
+            @functools.wraps(ctx_wrapper)
             def action(items):
                 ctx_args = items[0:num_ctx_args]
                 items = items[num_ctx_args:]
