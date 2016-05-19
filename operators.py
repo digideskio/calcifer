@@ -272,7 +272,6 @@ collect = make_collect(List)
 
 def make_policies(m):
     unit = make_unit(m)
-    collect = make_collect(m)
 
     @policy_rule_func(m)
     def policies(*rules):
@@ -281,7 +280,30 @@ def make_policies(m):
         applies each in turn, keeping scope constant for each. (By resetting
         the path each time)
         """
-        return collect(*rules)(None)
+        @policy_rule_func(m)
+        def policy_step(rule):
+            def for_partial(partial):
+                original_scope = partial.scope
+                if isinstance(rule, PolicyRule):
+                    results = rule(partial)
+                else:
+                    results = rule(None)(partial)
+
+                def for_result(result):
+                    _, partial = result
+                    _, rescoped_partial = partial.select(
+                        original_scope, set_path=True
+                    )
+                    return None, rescoped_partial
+
+                return results.fmap(for_result)
+            return for_partial
+
+        op = unit(None)
+        for rule in rules:
+            op = op >> policy_step(rule)
+
+        return op
     return policies
 policies = make_policies(List)
 
@@ -311,7 +333,6 @@ def make_regarding(m):
                 value = node.value
                 if not value:
                     value = node
-                print "rule_func: {}".format(rule_func)
 
                 if isinstance(rule_func, PolicyRule):
                     results = rule_func(inner_partial)
