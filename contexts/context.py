@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, select, append_value,
-    forbid_value, get_node, children, each, scope,
+    forbid_value, children, each, scope,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -41,14 +41,22 @@ class Context(BaseContext):
     def resource_id(self):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
-    def require(self, value=get_node()):
+    def require(self, *args):
+        if len(args):
+            value = args[0]
+        else:
+            value = self.value
         subctx = self.named_subctx("require")
         subctx.append(require_value, value).or_error()
         return subctx
 
-    def forbid(self):
+    def forbid(self, *args):
+        if len(args):
+            value = args[0]
+        else:
+            value = self.value
         subctx = self.named_subctx("forbid")
-        subctx.append(forbid_value, self.value).or_error()
+        subctx.append(forbid_value, value).or_error()
         return subctx
 
     def kwarg(self, kwarg_name):
