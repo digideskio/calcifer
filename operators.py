@@ -183,6 +183,7 @@ def make_set_path(m):
     return set_path
 set_path = make_set_path(List)
 
+
 def make_define_as(m):
     @policy_rule_func(m)
     def define_as(definition):
@@ -197,6 +198,7 @@ def make_define_as(m):
         return for_partial
     return define_as
 define_as = make_define_as(List)
+
 
 def make_with_value(m):
     def with_value(func):
