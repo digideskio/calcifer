@@ -129,7 +129,7 @@ class LeafPolicyNode(PolicyNode):
     def __repr__(self):
         return (
             "LeafPolicyNode("
-            "definition={definition}, "
+            "definition={definition}"
             ")"
         ).format(definition=self.definition)
 
