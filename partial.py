@@ -14,7 +14,7 @@ the policy tree or the pointer, or both.
 from jsonpointer import JsonPointer
 
 from dramafever.premium.services.policy.tree import (
-    PolicyNode, UnknownPolicyNode, LeafPolicyNode, Value
+    PolicyNode, UnknownPolicyNode, LeafPolicyNode
 )
 
 class Partial(object):
