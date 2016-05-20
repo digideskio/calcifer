@@ -125,7 +125,7 @@ class Partial(object):
         return (
             value, Partial(
                 pointer.set(
-                    self._root, LeafPolicyNode(Value(value)), inplace=False
+                    self._root, PolicyNode.from_obj(value), inplace=False
                 ),
                 path=self._pointer.parts
             )
