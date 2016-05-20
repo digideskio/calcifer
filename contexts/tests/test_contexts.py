@@ -344,7 +344,7 @@ class ContextTestCase(TestCase):
 
     def test_apply_alchemy(self):
         # for our test today, we will be doing some basic alchemy
-        material_names = [
+        inventory = [
             "aqua fortis",
             "glauber's salt",
             "lunar caustic",
@@ -373,9 +373,7 @@ class ContextTestCase(TestCase):
         # you'll know it once you've gotten it, just have to try out
         # all possible mixtures. (should be safe enough, right?)
 
-        forgotten_elixir_of_life = set(random.sample(material_names, 2))
-
-        inventory = _take_alchemical_inventory(material_names)
+        forgotten_elixir_of_life = set(random.sample(inventory, 2))
 
         discoveries_today = set(["frantic worry", "breakfast"])
 
@@ -429,7 +427,7 @@ class ContextTestCase(TestCase):
     def test_apply_dangerous_alchemy(self):
         # nice job! and you even finished in time to go foraging for
         # more ingredients!
-        material_names = [
+        inventory = [
             "aqua fortis",
             "glauber's salt",
             "lunar caustic",
@@ -444,11 +442,6 @@ class ContextTestCase(TestCase):
             # nice find
             "anti-plumbago"
         ]
-
-        inventory = {
-            str(idx): name
-            for idx, name in enumerate(material_names)
-        }
 
         # but unfortunately, it's the next day, and the same thing
         # has happened to you! except this time it was for your
@@ -516,13 +509,3 @@ class ContextTestCase(TestCase):
 
         self.assertIn("errors", result)
         self.assertTrue(len(result['errors']))
-
-
-def _take_alchemical_inventory(material_names):
-    # implementor's note: this is a dict because ctx.each() does
-    # not currently support lists
-    inventory = {
-        str(idx): name
-        for idx, name in enumerate(material_names)
-    }
-    return inventory

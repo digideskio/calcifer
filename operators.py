@@ -123,10 +123,10 @@ def make_children(m):
     def children():
         def for_partial(partial):
             node, _ = partial.select("")
-            if not hasattr(node, 'nodes'):
+            if not hasattr(node, 'keys'):
                 return m.unit( ([], partial) )
 
-            return m.unit( (node.nodes.keys(), partial) )
+            return m.unit( (node.keys, partial) )
         return for_partial
     return children
 children = make_children(List)

@@ -416,6 +416,15 @@ class PolicyBuilderTestCase(TestCase):
 
         self.assertEqual([['foo']], values)
 
+    def test_children_list(self):
+        func = children()
+        ps = func( Partial.from_obj([9,4,7,1,1]) )
+
+        results = ps.getValue()
+        values = [r[0] for r in results]
+
+        self.assertEqual([["0", "1", "2", "3", "4"]], values)
+
     def test_each(self):
         counter = {
             "num": 0
@@ -439,6 +448,22 @@ class PolicyBuilderTestCase(TestCase):
         values.sort()
 
         self.assertEquals(values, [1,2,3])
+
+    def test_each_list(self):
+        def increment(value):
+            return set_value(value+1)
+
+        func = children() >> each(increment)
+        ps = func( Partial.from_obj([2, 5, 1]) )
+
+        results = ps.getValue()
+        roots = [r[1].root for r in results]
+
+        self.assertEquals(len(roots), 1)
+        values = roots[0]
+        self.assertIsInstance(values, list)
+
+        self.assertEquals(values, [3,6,2])
 
     def test_each_ref(self):
         ref_obj = {"a": 7, "b": 3, "c": -1}

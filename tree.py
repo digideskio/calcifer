@@ -62,6 +62,8 @@ class PolicyNode:
             return obj
         if isinstance(obj, dict):
             return DictPolicyNode(**obj)
+        if isinstance(obj, list):
+            return ListPolicyNode(*obj)
         else:
             return LeafPolicyNode(Value(obj))
 
@@ -150,6 +152,10 @@ class DictPolicyNode(PolicyNode):
         return self._nodes
 
     @property
+    def keys(self):
+        return self._nodes.keys()
+
+    @property
     def value(self):
         return {
             name: node.value
@@ -168,7 +174,7 @@ class DictPolicyNode(PolicyNode):
         first = path[0]
         rest = path[1:]
 
-        node, new_first = self.nodes.get(first, UnknownPolicyNode()).select(rest)
+        node, new_first = self[first].select(rest)
         new_nodes = {k: v for k, v in self.nodes.items()}
         new_nodes[first] = new_first
 
@@ -181,6 +187,8 @@ class DictPolicyNode(PolicyNode):
         self._nodes[key] = node
 
     def __getitem__(self, key):
+        if key not in self._nodes:
+            return UnknownPolicyNode()
         return self._nodes[key]
 
     def __repr__(self):
@@ -190,5 +198,72 @@ class DictPolicyNode(PolicyNode):
     def __eq__(self, other):
         return (
             isinstance(other, DictPolicyNode) and
+            other.nodes == self.nodes
+        )
+
+class ListPolicyNode(PolicyNode):
+    def __init__(self, *nodes):
+        self._nodes = [
+            PolicyNode.from_obj(v)
+            for v in nodes
+        ]
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @property
+    def keys(self):
+        return [str(key) for key in range(len(self._nodes))]
+
+    @property
+    def value(self):
+        return [
+            node.value
+            for node in self.nodes
+        ]
+
+    def get_template(self):
+        return [
+            v.get_template() for v in self.nodes
+        ]
+
+    def select(self, path=None):
+        if not path:
+            return (self, self)
+
+        first = int(path[0])
+
+        rest = path[1:]
+
+        node, new_first = self[first].select(rest)
+        new_nodes = [v for v in self.nodes]
+        new_nodes[first] = new_first
+
+        return node, ListPolicyNode(*new_nodes)
+
+    def match(self, value):
+        return False, self
+
+    def __setitem__(self, key, node):
+        key = int(key)
+        sparsity = key - len(self._nodes) + 1
+        self._nodes.extend([UnknownPolicyNode()] * sparsity)
+        self._nodes[key] = node
+
+    def __getitem__(self, key):
+        try:
+            key = int(key)
+            return self._nodes[int(key)]
+        except:
+            return UnknownPolicyNode()
+
+    def __repr__(self):
+        args = ['{}'.format(v) for v in self.nodes]
+        return "ListPolicyNode({})".format(", ".join(args))
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, ListPolicyNode) and
             other.nodes == self.nodes
         )
