@@ -56,15 +56,16 @@ def stateT(m):
                     value, state = result
 
                     # after state transition
-                    m_new_result = function(value)(state)
+                    m_new_result = function(value).run(state)
 
                     return m_new_result
 
-                return self(state) >> for_state_result
+                return self.run(state) >> for_state_result
             return newState
 
-        def __call__(self, state):
-            return self.value(state)
+        @property
+        def run(self):
+            return self.value
 
         def fmap(self, function):
             return super(StateT, self).fmap(function)
@@ -107,7 +108,6 @@ def policyM(m):
             self, for_partial, context=None,
             ast=None,
         ):
-
             if ast is None:
                 ast = getattr(for_partial, 'ast', None)
 
@@ -151,17 +151,6 @@ def policyM(m):
                 binding.value, ast=new_ast
             )
 
-        def __call__(self, partial):
-            try:
-                result = super(PolicyRule, self).__call__(partial)
-            except:
-                logger.debug((
-                    "error evaluating policy rule: {}".format(repr(self))
-                ))
-                raise
-            return result
-
-
     return PolicyRule
 
 
@@ -195,19 +184,20 @@ def policy_rule_func(m, rule_func_name=None):
                         "<PolicyRuleFunc {}>".format(rule_func_name)
                     )
 
-
                 self.ast = asts.PolicyRuleFunc(rule_func_name)
                 self.rule_func = rule_func
                 self.rule_func_name = rule_func_name
 
             def __call__(self, *args, **kwargs):
-                rule = self.rule_func(*args, **kwargs)
+                for_partial = self.rule_func(*args, **kwargs)
+                if isinstance(for_partial, BasePolicyRule):
+                    for_partial = for_partial.run
 
                 func_call_ast = asts.PolicyRuleFuncCall(
                     self.ast, args, kwargs
                 )
                 return policyM(m)(
-                    rule, context=func_call_ast
+                    for_partial, context=func_call_ast
                 )
 
             def __repr__(self):

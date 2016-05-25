@@ -58,7 +58,7 @@ class BasePolicy(object):
 
         partial = new_self.initial_partial(obj)
         results = [
-            new_self.resolve(final) for _, final in policy_rule(partial)
+            new_self.resolve(final) for _, final in policy_rule.run(partial)
         ]
 
         return results

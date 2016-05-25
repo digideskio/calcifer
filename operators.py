@@ -208,7 +208,7 @@ def make_with_value(m):
         """
         def for_node(node):
             def for_partial(partial):
-                return func(node.value)(partial)
+                return func(node.value).run(partial)
             return for_partial
         return policy_rule_func(
             m, get_call_repr("with_value", func)
@@ -338,9 +338,9 @@ def make_regarding(m):
                     value = node
 
                 if isinstance(rule_func, PolicyRule):
-                    results = rule_func(inner_partial)
+                    results = rule_func.run(inner_partial)
                 else:
-                    results = rule_func(value)(inner_partial)
+                    results = rule_func(value).run(inner_partial)
                 def for_result(result):
                     _, partial = result
                     _, rescoped_partial = partial.select(
@@ -440,7 +440,6 @@ match = make_match(List)
 
 def make_permit_values(m):
     match = make_match(m)
-    unit = m.unit
 
     @policy_rule_func(m)
     def permit_values(permitted_values):
@@ -450,7 +449,8 @@ def make_permit_values(m):
         """
         def for_partial(partial):
             def for_value(value):
-                return unit(partial) >> match(value)
+                rule = match(value)
+                return rule.run(partial)
 
             monad = m.mzero()
             for value in permitted_values:
@@ -591,13 +591,14 @@ forbid_value = make_forbid_value(List)
 
 
 def make_unless_errors(m):
+    policies = make_policies(m)
     @policy_rule_func(m)
     def unless_errors(*rules):
         def for_partial(partial):
             errors = partial.root.get('errors', None)
             if errors:
                 return m.unit( (None, partial) )
-            return policies(*rules)(partial)
+            return policies(*rules).run(partial)
         return for_partial
     return unless_errors
 unless_errors = make_unless_errors(List)
@@ -629,7 +630,7 @@ def make_trace(m):
                 }
 
                 # run rule_func
-                results = rule_func(trace_obj)(partial)
+                results = rule_func(trace_obj).run(partial)
 
                 # rescope partial for next step
                 def for_result(result):
