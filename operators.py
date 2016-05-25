@@ -239,36 +239,35 @@ check = make_check(List)
 def make_collect(m):
     unit = make_unit(m)
     def collect(*rule_funcs):
-        def make_collect_step(value):
-            @policy_rule_func(m)
-            def collect_step(rule_func):
-                def for_partial(partial):
-                    # got it? good.
-                    scope = partial.scope
-                    results = (unit(value) >> rule_func)(partial)
+        """
+        Given a list of policy rule functions, returns a single policy rule
+        func that accepts some value, provides that to each function,
+        resetting the scope each time.
+        """
+        def for_incoming_value(incoming_value):
+            def for_initial_partial(initial_partial):
+                initial_scope = initial_partial.scope
 
-                    # now whatever results are returned, accounting
-                    # for non-determinism, rescope the partials so
-                    # they get the original scope
-                    def for_result(result):
-                        value, partial = result
-                        _, rescoped_partial = partial.select(
-                            scope, set_path=True
+                m_results = m.unit( (incoming_value, initial_partial) )
+                def for_rule_func(rule_func):
+                    def for_m_result(m_result):
+                        _, partial = m_result
+                        _, scoped_partial = partial.select(
+                            initial_scope, set_path=True
                         )
-                        return value, rescoped_partial
-                    return results.fmap(for_result)
-                return for_partial
-            return collect_step
 
-        def for_any(value):
-            op = unit(value)
-            collect_step = make_collect_step(value)
-            for rule_func in rule_funcs:
-                op = op >> collect_step(rule_func)
-            return op
+                        rule = unit(incoming_value) >> rule_func
+                        m_results = rule.run(scoped_partial)
+                        return m_results
+                    return for_m_result
 
+                for rule_func in rule_funcs:
+                    for_m_result = for_rule_func(rule_func)
+                    m_results = m_results >> for_m_result
+                return m_results
+            return for_initial_partial
         collect_func_name = get_call_repr('collect', *rule_funcs)
-        return policy_rule_func(m, collect_func_name)(for_any)
+        return policy_rule_func(m, collect_func_name)(for_incoming_value)
     return collect
 collect = make_collect(List)
 
@@ -277,36 +276,33 @@ def make_policies(m):
     unit = make_unit(m)
 
     @policy_rule_func(m)
-    def policies(*rules):
+    def policies(*rule_funcs):
         """
         Given a list of policy rules, returns a single policy rule that
         applies each in turn, keeping scope constant for each. (By resetting
         the path each time)
         """
-        @policy_rule_func(m)
-        def policy_step(rule):
-            def for_partial(partial):
-                original_scope = partial.scope
-                if isinstance(rule, PolicyRule):
-                    results = rule(partial)
-                else:
-                    results = rule(None)(partial)
+        def for_initial_partial(initial_partial):
+            initial_scope = initial_partial.scope
 
-                def for_result(result):
-                    _, partial = result
-                    _, rescoped_partial = partial.select(
-                        original_scope, set_path=True
+            m_results = m.unit( (None, initial_partial) )
+            def for_rule_func(rule_func):
+                def for_m_result(m_result):
+                    _, partial = m_result
+                    _, scoped_partial = partial.select(
+                        initial_scope, set_path=True
                     )
-                    return None, rescoped_partial
 
-                return results.fmap(for_result)
-            return for_partial
+                    rule = unit(None) >> rule_func
+                    m_results = rule.run(scoped_partial)
+                    return m_results
+                return for_m_result
 
-        op = unit(None)
-        for rule in rules:
-            op = op >> policy_step(rule)
-
-        return op
+            for rule_func in rule_funcs:
+                for_m_result = for_rule_func(rule_func)
+                m_results = m_results >> for_m_result
+            return m_results
+        return for_initial_partial
     return policies
 policies = make_policies(List)
 
