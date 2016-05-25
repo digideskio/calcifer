@@ -364,46 +364,6 @@ def make_regarding(m):
 regarding = make_regarding(List)
 
 
-def make_given(m):
-    path = make_path(m)
-    select = make_select(m)
-    set_path = make_set_path(m)
-    unit = make_unit(m)
-
-    @policy_rule_func(m)
-    def given(selector, *rule_funcs):
-        """
-        Given a selector and a list of functions that generate policy rules,
-        returns a single policy rule that, for each rule function:
-            1. retrieves the node at selector
-            3. passes the node to the rule_func to generate a policy rule
-            4. applies the policy rule at the current scope
-
-        In addition, given checks the current scope at the start and restores
-        it when it's done.
-
-        (`given` is identical to `regarding` except that the provided
-        rule_funcs will run in the pre-existing scope)
-        """
-        @policy_rule_func(m)
-        def given_step(rule_func):
-            return (
-                path() >> (lambda old_path:
-                select(selector, set_path=False) >>
-                rule_func >>
-                set_path(old_path))
-            )
-
-        op = unit(None)
-        for rule_func in rule_funcs:
-            op = op >> given_step(rule_func)
-
-        return op
-
-    return given
-given = make_given(List)
-
-
 def make_each(m):
     unit = make_unit(m)
     def each(*rule_funcs, **kwargs):

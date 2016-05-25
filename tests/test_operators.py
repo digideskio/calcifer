@@ -9,8 +9,7 @@ from dramafever.premium.services.policy.tree import (
 )
 from dramafever.premium.services.policy import (
     Partial,
-    set_value, with_value,
-    check, policies, regarding, given, fail, match, attempt,
+    set_value, select, check, policies, regarding, fail, match, attempt,
     permit_values, define_as, children, each, scope,
 )
 from dramafever.premium.services.policy import operators
@@ -21,14 +20,14 @@ from dramafever.premium.services.policy import operators
 set_valueI = operators.make_set_value(Identity)
 policyI = operators.make_policies(Identity)
 regardingI = operators.make_regarding(Identity)
-givenI = operators.make_given(Identity)
+selectI = operators.make_select(Identity)
 matchI = operators.make_match(Identity)
 with_valueI = operators.make_with_value(Identity)
 
 set_valueM = operators.make_set_value(Maybe)
 policyM = operators.make_policies(Maybe)
 regardingM = operators.make_regarding(Maybe)
-givenM = operators.make_given(Maybe)
+selectM = operators.make_select(Maybe)
 matchM = operators.make_match(Maybe)
 with_valueM = operators.make_with_value(Maybe)
 
@@ -104,24 +103,6 @@ class PolicyBuilderTestCase(TestCase):
         value, _ = item.select("/fields/foo")
         self.assertEqual(LeafPolicyNode(Value(6)), value)
 
-    def test_givenI(self):
-        func = policyI(
-            regardingI("/fields/foo", set_valueI("foo")),
-            regardingI(
-                "/fields/bar",
-                givenI(
-                    "/fields/foo", with_valueI(lambda foo: set_valueI(foo + "bar"))
-                )
-            )
-        )
-        _, partial = func(Partial()).getValue()
-
-        foo_node, _ = partial.select("/fields/foo")
-        bar_node, _ = partial.select("/fields/bar")
-        self.assertEqual("foo", foo_node.value)
-        self.assertEqual("foobar", bar_node.value)
-
-
     def test_regardingM(self):
         func = policyM(
            regardingM("/fields/foo", set_valueM("foo")),
@@ -163,32 +144,13 @@ class PolicyBuilderTestCase(TestCase):
 
         self.assertEqual(LeafPolicyNode(Value("bar")), foo_node)
 
-    def test_givenM(self):
-        func = policyM(
-            regardingM("/fields/foo", set_valueM("foo")),
-            regardingM(
-                "/fields/bar",
-                givenM(
-                    "/fields/foo", with_valueM(lambda foo: set_valueM(foo + "bar"))
-                )
-            )
-        )
-
-        maybe = func( Partial() )
-        self.assertTrue(isinstance(maybe, Just))
-        _, partial = maybe.getValue()
-        foo_node, _ = partial.select("/fields/foo")
-        bar_node, _ = partial.select("/fields/bar")
-        self.assertEqual("foo", foo_node.value)
-        self.assertEqual("foobar", bar_node.value)
-
     def test_matchM(self):
         func = policyM(
             regardingM("/fields/foo", set_valueM("foo")),
             regardingM(
                 "/fields/bar",
-                givenM(
-                    "/fields/foo", with_valueM(lambda foo: set_valueM(foo + "bar"))
+                selectM("/fields/foo") >> (
+                    lambda foo: set_valueM(foo.value + "bar")
                 )
             ),
             regardingM("/fields/bar", matchM("foobar"))
@@ -224,8 +186,8 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", set_value("foo")),
             regarding(
                 "/fields/bar",
-                given(
-                    "/fields/foo", with_value(lambda foo: set_value(foo + "bar"))
+                select("/fields/foo") >> (
+                    lambda foo: set_value(foo.value + "bar")
                 )
             ),
             regarding("/fields/bar", match("foobar"))
@@ -242,8 +204,8 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", set_value("foo")),
             regarding(
                 "/fields/bar",
-                given(
-                    "/fields/foo", with_value(lambda foo: set_value(foo + "bar"))
+                select("/fields/foo") >> (
+                    lambda foo: set_value(foo.value + "bar")
                 )
             ),
             regarding("/fields/bar", match("barfu"))
