@@ -1,7 +1,7 @@
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, select, append_value,
-    forbid_value, children, each, scope,
+    forbid_value, children, each, scope, collect,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -124,19 +124,39 @@ class Context(BaseContext):
         self.append(scope())
         return self
 
+    def new_error(self):
+        subctx = self.subctx()
+        subctx.append(add_error, {})
+        errors_ctx = subctx.select("/errors").children()
+        idx_ctx = errors_ctx.apply(lambda es: es[-1], errors_ctx.value)
+        new_error_ctx = idx_ctx.select(idx_ctx.value)
+        return new_error_ctx
+
     def or_error(self):
         catch_ctx = self.or_catch()
-        catch_ctx.append(add_error, catch_ctx.value)
+        catch_ctx.new_error().set_value(catch_ctx.value)
         return self
 
-    def each(self, **kwargs):
-        eachctx = self.named_subctx(
-            "each",
-            lambda policy_rules: (
-                children() >>
-                each(
-                    *policy_rules, **kwargs
-                )
+    def children(self):
+        children_ctx = self.subctx(
+           lambda policy_rules: (
+                children() >> collect(*policy_rules)
             )
+        )
+        return children_ctx
+
+    def each(self, **kwargs):
+        def with_policy_rules(policy_rules):
+            def with_true_children(true_children):
+                return each(
+                    *policy_rules, **kwargs
+                )(true_children)
+            return with_true_children
+
+        subctx = self.subctx()
+        eachctx = subctx.named_subctx(
+            "each",
+            with_policy_rules,
+            subctx.children()
         )
         return eachctx
