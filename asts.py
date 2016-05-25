@@ -1,4 +1,5 @@
 from abc import ABCMeta
+import collections
 import copy
 import re
 
@@ -22,13 +23,27 @@ class Node:
     def __deepcopy__(self, memo):
         return copy.copy(self)
 
+def flatten(l):
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
+
 class Binding(Node):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+    def __new__(cls, *operands):
+        operands = flatten([
+            operand if not isinstance(operand, cls) else operand.operands
+            for operand in operands
+        ])
+        return super(Binding, cls).__new__(cls, operands)
+
+    def __init__(self, *operands):
+        self.operands = operands
 
     def __repr__(self):
-        return "{} >> {}".format(repr(self.left), repr(self.right))
+        return " >> ".join([repr(operand) for operand in self.operands])
 
 class PolicyRuleFunc(Node):
     def __init__(self, name):
