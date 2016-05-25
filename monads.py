@@ -29,6 +29,7 @@ import logging
 from pymonad import Monad
 
 from dramafever.premium.services.policy import asts
+from dramafever.premium.services.policy.asts import get_call_repr # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
@@ -163,11 +164,10 @@ def policyM(m):
 
     return PolicyRule
 
+
 class BasePolicyRuleFunc(object):
     __metaclass__ = ABCMeta
 
-def get_call_repr(func_name, *args, **kwargs):
-    return repr(asts.PolicyRuleFuncCall(func_name, args, kwargs))
 
 def policy_rule_func(m, rule_func_name=None):
     def decorator(rule_func):
@@ -184,7 +184,6 @@ def policy_rule_func(m, rule_func_name=None):
                     ).format(
                         ", ".join(inspect.getargspec(rule_func).args)
                     )
-
 
                 if rule_func.__doc__:
                     # this is janky but it works.
