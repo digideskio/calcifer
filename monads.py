@@ -125,15 +125,25 @@ def policyM(m):
         def __deepcopy__(self, memo):
             return copy.copy(self)
 
+        def _bind_policy_rule(self, rule):
+            def for_operands(left, right):
+                def combined_for_partial(initial_partial):
+                    m_results = left.run(initial_partial)
+                    def for_m_result(m_result):
+                        _, partial = m_result
+                        return right.run(partial)
+                    return m_results >> for_m_result
+                return combined_for_partial
+
+            new_ast = asts.Binding(self.ast, rule.ast)
+            return PolicyRule(
+                for_operands(self, rule), ast=new_ast
+            )
+
         def bind(self, rule_func):
             if isinstance(rule_func, BasePolicyRule):
-                def make_rule_func(policy_rule):
-                    @policy_rule_func(m,
-                                      "do({})".format(repr(policy_rule.ast)))
-                    def do(_):
-                        return policy_rule
-                    return do
-                rule_func = make_rule_func(rule_func)
+                return self._bind_policy_rule(rule_func)
+
             if not isinstance(rule_func, BasePolicyRuleFunc):
                 rule_func = policy_rule_func(m)(rule_func)
 
