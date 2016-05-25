@@ -308,8 +308,8 @@ policies = make_policies(List)
 
 
 def make_regarding(m):
+    policies = make_policies(m)
     select = make_select(m)
-    unit = make_unit(m)
     unit_value = make_unit_value(m)
 
     @policy_rule_func(m)
@@ -348,9 +348,7 @@ def make_regarding(m):
             return for_partial
 
         if rule_funcs:
-            op = unit(None)
-            for rule_func in rule_funcs:
-                op = op >> regarding_step(rule_func)
+            op = policies(*[regarding_step(rule_func) for rule_func in rule_funcs])
         else:
             op = select(selector, set_path=False) >> unit_value
 
@@ -461,6 +459,7 @@ permit_values = make_permit_values(List)
 def make_attempt(m):
     mzero = m.mzero
     unit = make_unit(m)
+    collect = make_collect(m)
 
     def attempt(*rules, **kwargs):
         """
@@ -472,23 +471,22 @@ def make_attempt(m):
         Accepts a policy rule function as kwarg `catch=` which can be
         applied instead of simply "not failing"
         """
-        def for_any(value):
-            def for_partial(partial):
-                op = unit(value)
-                initial = op(partial)
-                for rule in rules:
-                    op = op >> rule
-                result = op(partial)
+        def for_value(value):
+            def for_partial(initial_partial):
+                op = unit(value) >> collect(*rules)
+                result = op.run(initial_partial)
 
                 if result == mzero():
                     if 'catch' in kwargs:
-                        alternative = (unit(value) >> kwargs['catch'])(partial)
+                        alternative = (unit(value) >> kwargs['catch']).run(
+                            initial_partial
+                        )
                         return alternative
-                    return initial
+                    return m.unit( (value, initial_partial) )
                 return result
             return for_partial
         attempt_rule_func_name = get_call_repr("attempt", *rules, **kwargs)
-        return policy_rule_func(m, attempt_rule_func_name)(for_any)
+        return policy_rule_func(m, attempt_rule_func_name)(for_value)
     return attempt
 attempt = make_attempt(List)
 
@@ -602,6 +600,7 @@ unless_errors = make_unless_errors(List)
 
 def make_trace(m):
     unit = make_unit(m)
+    policies = make_policies(m)
 
     @policy_rule_func(m)
     def trace(*rule_funcs):
@@ -642,9 +641,7 @@ def make_trace(m):
         if not rule_funcs:
             rule_funcs = [unit]
 
-        op = unit(None)
-        for rule_func in rule_funcs:
-            op = op >> trace_step(rule_func)
+        op = policies(*[trace_step(rule_func) for rule_func in rule_funcs])
 
         return op
     return trace
