@@ -110,7 +110,6 @@ class ContextTestCase(TestCase):
         for ast in policy_asts:
             self.assertIsInstance(ast, asts.Node)
 
-
     def test_whitelist_values(self):
         ctx = Context()
         ctx.consumer_name.whitelist_values(
