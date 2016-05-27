@@ -41,12 +41,23 @@ class Context(BaseContext):
     def resource_id(self):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
+    def make_error_handler_ctx(self):
+        error_handler_ctx = self.__class__(name="error_handler")
+        return error_handler_ctx
+
     def require(self, *args):
         if len(args):
             value = args[0]
         else:
             value = self.value
+
         subctx = self.named_subctx("require")
+
+        error_handler_ctx = self.make_error_handler_ctx()
+        subctx.error_handler = error_handler_ctx.select("message").set_value(
+            "Value is required."
+        )
+
         subctx.append(require_value, value).or_error()
         return subctx
 
@@ -124,17 +135,68 @@ class Context(BaseContext):
         self.append(scope())
         return self
 
-    def new_error(self):
-        subctx = self.subctx()
-        subctx.append(add_error, {})
-        errors_ctx = subctx.select("/errors").children()
+    def add_error(self):
+        self.append(add_error, {})
+
+    @property
+    def last_error(self):
+        errors_ctx = self.select("/errors").children()
         idx_ctx = errors_ctx.apply(lambda es: es[-1], errors_ctx.value)
-        new_error_ctx = idx_ctx.select(idx_ctx.value)
-        return new_error_ctx
+        last_error_ctx = idx_ctx.select(idx_ctx.value)
+        return last_error_ctx
 
     def or_error(self):
         catch_ctx = self.or_catch()
-        catch_ctx.new_error().set_value(catch_ctx.value)
+
+        subctx = catch_ctx.subctx()
+        subctx.add_error()
+        # prepare error
+
+        # include provided value in error
+        provided_value_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['value'],
+            catch_ctx.value
+        )
+        provided_value_ctx.last_error.select("value").set_value(provided_value_ctx.value)
+
+        # include scope
+        scope_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['scope'],
+            catch_ctx.value
+        )
+        scope_ctx.last_error.select("scope").set_value(scope_ctx.value)
+
+        # include context frameset itself
+        ctxes_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['context'],
+            catch_ctx.value
+        )
+        ctxes_ctx.last_error.select("context").set_value(ctxes_ctx.value)
+
+        # for each frame in the context, allow the ctx frame to specify
+        # an error handler policy rule that will be:
+
+        # for each ctx frame,
+        ctx_list_ctx = subctx.last_error.select("context")
+        def for_ctx_list(ctx_list):
+            return ctx_list
+        ctx_list_ctx.apply(for_ctx_list, ctx_list_ctx.value)
+
+        frame_ctx = subctx.last_error.select("context").each()
+        frame_ctx.select("context").apply
+        ctx_frame = frame_ctx.value
+
+        # checking for error_handler,
+        error_handler_ctx = frame_ctx.check(
+            lambda true_frame: true_frame.error_handler,
+            ctx_frame
+        )
+
+        # append the error handler as a policy rule
+        error_handler_ctx.last_error.append(
+            error_handler_ctx.value
+        )
+
         return self
 
     def children(self):

@@ -625,7 +625,11 @@ def make_trace(m):
                 }
 
                 # run rule_func
-                results = rule_func(trace_obj).run(partial)
+                if isinstance(rule_func, PolicyRule):
+                    rule = rule_func
+                else:
+                    rule = rule_func(trace_obj)
+                results = rule.run(partial)
 
                 # rescope partial for next step
                 def for_result(result):

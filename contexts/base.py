@@ -2,8 +2,7 @@ import copy
 import functools
 
 from dramafever.premium.services.policy.operators import (
-    unless_errors, wrap_context, attempt, trace, collect, unit, policies,
-    regarding,
+    wrap_context, attempt, trace, collect, unit, policies, regarding,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc
@@ -198,6 +197,7 @@ class BaseContext(object):
     def __init__(self, wrapper=None, *ctx_args, **kwargs):
         self.items = []
         self.ctx_name = kwargs.get('name', None)
+        self.error_handler = None
 
         if wrapper is None:
             wrapper = self.__class__.get_default_wrapper()
@@ -207,7 +207,7 @@ class BaseContext(object):
 
     @staticmethod
     def get_default_wrapper():
-        return lambda policy_rules: unless_errors(*policy_rules)
+        return lambda policy_rules: policies(*policy_rules)
 
     @staticmethod
     def is_policy_rule(value):
@@ -288,7 +288,7 @@ class BaseContext(object):
         return item
 
     def wrap(self, items):
-        def make_action(ctx_wrapper, ctx_name, num_ctx_args):
+        def make_action(ctx_wrapper, ctx_name, error_handler, num_ctx_args):
             @functools.wraps(ctx_wrapper)
             def action(items):
                 ctx_args = items[0:num_ctx_args]
@@ -296,7 +296,16 @@ class BaseContext(object):
                 wrapped = ctx_apply(ctx_wrapper(items), [], ctx_args)
 
                 if ctx_name:
-                    ctx_frame = ContextFrame(ctx_name, wrapped.ast)
+                    if error_handler:
+                        handler_rule = error_handler.finalize()
+                        ctx_frame = ContextFrame(
+                            ctx_name, wrapped.ast, handler_rule
+                        )
+                    else:
+                        ctx_frame = ContextFrame(
+                            ctx_name, wrapped.ast
+                        )
+
                     wrapped = wrap_context(ctx_frame, wrapped)
                 return wrapped
             return action
@@ -304,6 +313,7 @@ class BaseContext(object):
         action = make_action(
             self.wrapper,
             self.ctx_name,
+            self.error_handler,
             len(self.ctx_args)
         )
 
@@ -356,7 +366,7 @@ class BaseContext(object):
             )
 
         attempt_ctx = self.subctx(attempt_wrapper)
-        catch = attempt_ctx.subctx().trace(attempt_ctx.value)
+        catch = attempt_ctx.trace(attempt_ctx.value)
 
         return attempt_ctx, catch
 
@@ -403,7 +413,7 @@ class BaseContext(object):
                 def eval_wrapper(*true_func_args):
                     func_result = func(*true_func_args)
                     if func_result:
-                        return unit(func_result) >> collect(*policy_rules)
+                        return collect(*policy_rules)(func_result)
                     else:
                         return policies()
                 return eval_wrapper
@@ -459,13 +469,14 @@ class BaseContext(object):
 
 
 class ContextFrame(object):
-    def __init__(self, name, ast):
+    def __init__(self, name, ast, error_handler=None):
         self.name = name
         self.policy_ast = ast
+        self.error_handler = error_handler
 
     def __repr__(self):
         return "<policy '{}'>".format(self.name)
 
     def __deepcopy__(self, memo):
         # you get a new object but you're not copying that AST
-        return ContextFrame(self.name, self.policy_ast)
+        return ContextFrame(self.name, self.policy_ast, self.error_handler)

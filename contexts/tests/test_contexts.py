@@ -154,6 +154,7 @@ class ContextTestCase(TestCase):
         self.assertEquals(len(errors), 1)
         error = errors[0]
         self.assertEquals(error["scope"], "/dict/b")
+        self.assertEquals(error["message"], "Value is required.")
 
     def test_finalize(self):
         ctx = Context(name="root")
