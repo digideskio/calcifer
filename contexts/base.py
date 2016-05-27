@@ -2,8 +2,7 @@ import copy
 import functools
 
 from dramafever.premium.services.policy.operators import (
-    unless_errors, wrap_context, attempt, trace, collect, unit, policies,
-    regarding,
+    wrap_context, attempt, trace, collect, unit, policies, regarding,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc
