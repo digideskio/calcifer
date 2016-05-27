@@ -403,7 +403,7 @@ class BaseContext(object):
                 def eval_wrapper(*true_func_args):
                     func_result = func(*true_func_args)
                     if func_result:
-                        return unit(func_result) >> collect(*policy_rules)
+                        return collect(*policy_rules)(func_result)
                     else:
                         return policies()
                 return eval_wrapper

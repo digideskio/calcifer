@@ -162,6 +162,25 @@ class Context(BaseContext):
         )
         ctxes_ctx.last_error.select("context").set_value(ctxes_ctx.value)
 
+        # for each frame in the context, allow the ctx frame to specify
+        # an error handler policy rule that will be:
+
+        # for each ctx frame,
+        frame_ctx = subctx.last_error.select('context').each()
+        ctx_frame = frame_ctx.value
+
+        # checking for error_handler,
+        error_handler_ctx = frame_ctx.check(
+            lambda true_frame: getattr(true_frame, 'error_handler', None),
+            ctx_frame
+        )
+
+        # append the error handler as a policy rule
+        error_handler_ctx.last_error.append(
+            policies,
+            error_handler_ctx.value
+        )
+
         return self
 
     def children(self):
