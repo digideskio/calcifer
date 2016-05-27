@@ -41,12 +41,23 @@ class Context(BaseContext):
     def resource_id(self):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
+    def make_error_handler_ctx(self):
+        error_handler_ctx = self.__class__(name="error_handler")
+        return error_handler_ctx
+
     def require(self, *args):
         if len(args):
             value = args[0]
         else:
             value = self.value
+
         subctx = self.named_subctx("require")
+
+        error_handler_ctx = self.make_error_handler_ctx()
+        subctx.error_handler = error_handler_ctx.select("message").set_value(
+            "Value is required."
+        )
+
         subctx.append(require_value, value).or_error()
         return subctx
 
@@ -166,18 +177,23 @@ class Context(BaseContext):
         # an error handler policy rule that will be:
 
         # for each ctx frame,
-        frame_ctx = subctx.last_error.select('context').each()
+        ctx_list_ctx = subctx.last_error.select("context")
+        def for_ctx_list(ctx_list):
+            return ctx_list
+        ctx_list_ctx.apply(for_ctx_list, ctx_list_ctx.value)
+
+        frame_ctx = subctx.last_error.select("context").each()
+        frame_ctx.select("context").apply
         ctx_frame = frame_ctx.value
 
         # checking for error_handler,
         error_handler_ctx = frame_ctx.check(
-            lambda true_frame: getattr(true_frame, 'error_handler', None),
+            lambda true_frame: true_frame.error_handler,
             ctx_frame
         )
 
         # append the error handler as a policy rule
         error_handler_ctx.last_error.append(
-            policies,
             error_handler_ctx.value
         )
 
