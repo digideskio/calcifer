@@ -124,17 +124,44 @@ class Context(BaseContext):
         self.append(scope())
         return self
 
-    def new_error(self):
-        subctx = self.subctx()
-        subctx.append(add_error, {})
-        errors_ctx = subctx.select("/errors").children()
+    def add_error(self):
+        self.append(add_error, {})
+
+    @property
+    def last_error(self):
+        errors_ctx = self.select("/errors").children()
         idx_ctx = errors_ctx.apply(lambda es: es[-1], errors_ctx.value)
-        new_error_ctx = idx_ctx.select(idx_ctx.value)
-        return new_error_ctx
+        last_error_ctx = idx_ctx.select(idx_ctx.value)
+        return last_error_ctx
 
     def or_error(self):
         catch_ctx = self.or_catch()
-        catch_ctx.new_error().set_value(catch_ctx.value)
+
+        subctx = catch_ctx.subctx()
+        subctx.add_error()
+        # prepare error
+
+        # include provided value in error
+        provided_value_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['value'],
+            catch_ctx.value
+        )
+        provided_value_ctx.last_error.select("value").set_value(provided_value_ctx.value)
+
+        # include scope
+        scope_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['scope'],
+            catch_ctx.value
+        )
+        scope_ctx.last_error.select("scope").set_value(scope_ctx.value)
+
+        # include context frameset itself
+        ctxes_ctx = subctx.apply(
+            lambda true_trace_obj: true_trace_obj['context'],
+            catch_ctx.value
+        )
+        ctxes_ctx.last_error.select("context").set_value(ctxes_ctx.value)
+
         return self
 
     def children(self):
