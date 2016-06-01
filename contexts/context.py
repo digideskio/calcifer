@@ -1,3 +1,5 @@
+import logging
+
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, unit_value,
     select, check, require_value, select, append_value,
@@ -7,6 +9,8 @@ from dramafever.premium.services.policy.contexts.policies import (
     add_error
 )
 from dramafever.premium.services.policy.contexts.base import BaseContext
+
+logger = logging.getLogger(__name__)
 
 
 class Context(BaseContext):
@@ -99,32 +103,39 @@ class Context(BaseContext):
         if params is None:
             params = {}
 
-        def make_query_runner(receiver):
-            def query_runner():
-                from dramafever.premium.services.dispatch import dispatcher
-                query_sender = receiver
-                dispatch = dispatcher.connect_as(**query_sender)
-                query_receiver = {
-                    "resource_name": resource_name,
-                    "query_name": query_name,
-                }
-                if resource_id is not None:
-                    query_receiver["resource_id"] = resource_id
-
-                data = {"params": params}
-
-                query_response = dispatch.query(query_receiver, data)
-
-                return query_response['data']
-            return query_runner
-
-        return self.subctx(
-            lambda policy_rules: (
-                select("/receiver") >> unit_value >> (lambda receiver: (
-                    check(make_query_runner(receiver))
-                ))
+        def run_query_for_sender_receiver(sender, receiver):
+            logger.debug(
+                "run_query_for_sender_receiver {} {}".format(
+                    sender, receiver
+                )
             )
+
+            from dramafever.premium.services.dispatch import dispatcher
+            query_sender = {k:v for k,v in receiver.items()}
+            query_sender.update(sender)
+            dispatch = dispatcher.connect_as(**query_sender)
+            query_receiver = {
+                "resource_name": resource_name,
+                "query_name": query_name,
+            }
+            if resource_id is not None:
+                query_receiver["resource_id"] = resource_id
+
+            data = {"params": params}
+
+            query_response = dispatch.query(query_receiver, data)
+
+            return query_response['data']
+
+        sender_ctx = self.select("/sender")
+        receiver_ctx = self.select("/receiver")
+
+        query_result_ctx = self.apply(
+            run_query_for_sender_receiver,
+            sender_ctx, receiver_ctx
         )
+
+        return query_result_ctx
 
     def whitelist_values(self, values):
         subctx = self.named_subctx("whitelist_values")
