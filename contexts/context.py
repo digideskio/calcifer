@@ -44,9 +44,11 @@ class Context(BaseContext):
     def resource_id(self):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
-    def make_error_handler_ctx(self):
+    def error_ctx(self):
         error_handler_ctx = self.__class__(name="error_handler")
+        self.error_handler = error_handler_ctx
         return error_handler_ctx
+
 
     def require(self, *args):
         if len(args):
