@@ -266,6 +266,10 @@ def make_collect(m):
                     m_results = m_results >> for_m_result
                 return m_results
             return for_initial_partial
+
+        if not rule_funcs:
+            rule_funcs = [unit]
+
         collect_func_name = get_call_repr('collect', *rule_funcs)
         return policy_rule_func(m, collect_func_name)(for_incoming_value)
     return collect
