@@ -58,8 +58,7 @@ class Context(BaseContext):
 
         subctx = self.named_subctx("require")
 
-        error_handler_ctx = self.make_error_handler_ctx()
-        subctx.error_handler = error_handler_ctx.select("message").set_value(
+        subctx.error_ctx().select("message").set_value(
             "Value is required."
         )
 
@@ -141,6 +140,7 @@ class Context(BaseContext):
     def whitelist_values(self, values):
         subctx = self.named_subctx("whitelist_values")
         subctx.append(permit_values, values).or_error()
+        subctx.error_ctx().select("code").set_value("INVALID_VALUE")
         return subctx
 
     def scope(self):
@@ -194,7 +194,7 @@ class Context(BaseContext):
             return ctx_list
         ctx_list_ctx.apply(for_ctx_list, ctx_list_ctx.value)
 
-        frame_ctx = subctx.last_error.select("context").each()
+        frame_ctx = ctx_list_ctx.last_error.select("context").each()
         frame_ctx.select("context").apply
         ctx_frame = frame_ctx.value
 
