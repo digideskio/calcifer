@@ -1,8 +1,7 @@
 import logging
 
 from dramafever.premium.services.policy.operators import (
-    policies, regarding, set_value, permit_values, unit_value,
-    select, check, require_value, select, append_value,
+    policies, regarding, set_value, permit_values, require_value, append_value,
     forbid_value, children, each, scope, collect,
 )
 from dramafever.premium.services.policy.contexts.policies import (
