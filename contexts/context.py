@@ -45,9 +45,10 @@ class Context(BaseContext):
         return self.scope_subctx("/receiver/resource_id", "resource_id")
 
     def error_ctx(self):
-        error_handler_ctx = self.__class__(name="error_handler")
-        self.error_handler = error_handler_ctx
-        return error_handler_ctx
+        if not self.error_handler:
+            error_handler_ctx = self.__class__(name="error_handler")
+            self.error_handler = error_handler_ctx
+        return self.error_handler
 
 
     def require(self, *args):
