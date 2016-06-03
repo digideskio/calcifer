@@ -7,6 +7,7 @@ for the purposes of template generation and command validation.
 N.B. These considered LOW-LEVEL operators. For command policy specification,
 use the operators in `dramafever.premium.commands` and not this module.
 """
+import logging
 from pymonad import List
 
 from dramafever.premium.services.policy.tree import PolicyNode
@@ -15,6 +16,8 @@ from dramafever.premium.services.policy.monads import (
 
     PolicyRule
 )
+
+logger = logging.getLogger(__name__)
 
 
 #
@@ -554,10 +557,13 @@ def make_require_value(m):
         returns []
         """
         def for_partial(partial):
+            logger.debug("require_value %r", node)
             if isinstance(node, PolicyNode):
                 if node.value is None:
+                    logger.debug("require_value fail")
                     return m.mzero()
             if node is None:
+                logger.debug("require_value fail")
                 return m.mzero()
             return m.unit( (None, partial) )
         return for_partial
