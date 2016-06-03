@@ -104,12 +104,14 @@ class Context(BaseContext):
         if params is None:
             params = {}
 
-        def run_query_for_sender_receiver(sender, receiver):
-            logger.debug(
-                "run_query_for_sender_receiver {} {}".format(
-                    sender, receiver
-                )
-            )
+        def run_query(query_name, resource_name, sender, receiver):
+            logger.debug((
+                "run_query:\n"
+                "  query_name={}\n"
+                "  resource_name={}\n"
+                "  sender={}\n"
+                "  receiver={}"
+            ).format(query_name, resource_name, sender, receiver))
 
             from dramafever.premium.services.dispatch import dispatcher
             query_sender = {k:v for k,v in receiver.items()}
@@ -125,15 +127,18 @@ class Context(BaseContext):
             data = {"params": params}
 
             query_response = dispatch.query(query_receiver, data)
+            logger.debug((
+                "run_query result: {}"
+            ).format(query_response))
 
             return query_response['data']
 
-        sender_ctx = self.select("/sender")
-        receiver_ctx = self.select("/receiver")
+        sender = self.select("/sender")
+        receiver = self.select("/receiver")
 
         query_result_ctx = self.apply(
-            run_query_for_sender_receiver,
-            sender_ctx, receiver_ctx
+            run_query,
+            query_name, resource_name, sender, receiver
         )
 
         return query_result_ctx
