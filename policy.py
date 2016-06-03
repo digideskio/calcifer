@@ -86,6 +86,7 @@ class BasePolicy(object):
         self.method(*method_args)
         if self.parent:
             # TODO this is a codesmell
+            logger.debug("context name: %s", ctx.ctx_name)
             if ctx.ctx_name == 'endpoint_policy':
                 ctx.wrapper = lambda policy_rules: unless_errors(*policy_rules)
 

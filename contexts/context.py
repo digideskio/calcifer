@@ -50,7 +50,6 @@ class Context(BaseContext):
             self.error_handler = error_handler_ctx
         return self.error_handler
 
-
     def require(self, *args):
         if len(args):
             value = args[0]

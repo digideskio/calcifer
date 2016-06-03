@@ -7,6 +7,7 @@ for the purposes of template generation and command validation.
 N.B. These considered LOW-LEVEL operators. For command policy specification,
 use the operators in `dramafever.premium.commands` and not this module.
 """
+import logging
 from pymonad import List
 
 from dramafever.premium.services.policy.tree import PolicyNode
@@ -15,6 +16,8 @@ from dramafever.premium.services.policy.monads import (
 
     PolicyRule
 )
+
+logger = logging.getLogger(__name__)
 
 
 #
@@ -590,14 +593,18 @@ forbid_value = make_forbid_value(List)
 
 def make_unless_errors(m):
     policies = make_policies(m)
+
     @policy_rule_func(m)
     def unless_errors(*rules):
-        def for_partial(partial):
-            errors = partial.root.get('errors', None)
-            if errors:
-                return m.unit( (None, partial) )
-            return policies(*rules).run(partial)
-        return for_partial
+        @policy_rule_func(m)
+        def unless_errors_step(rule):
+            def for_partial(partial):
+                errors = partial.root.get('errors', None)
+                if errors:
+                    return m.unit( (None, partial) )
+                return rule.run(partial)
+            return for_partial
+        return policies(*[unless_errors_step(rule) for rule in rules])
     return unless_errors
 unless_errors = make_unless_errors(List)
 
