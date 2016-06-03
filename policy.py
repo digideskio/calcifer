@@ -4,6 +4,7 @@ import types
 
 from dramafever.premium.services.policy.contexts import Context
 from dramafever.premium.services.policy.partial import Partial
+from dramafever.premium.services.policy.operators import unless_errors
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,10 @@ class BasePolicy(object):
         method_args += self.args
         self.method(*method_args)
         if self.parent:
+            # TODO this is a codesmell
+            if ctx.ctx_name == 'endpoint_policy':
+                ctx.wrapper = lambda policy_rules: unless_errors(*policy_rules)
+
             includes = copy.copy(self.includes)
             for include in includes:
                 if type(include) == str:
