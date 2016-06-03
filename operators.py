@@ -555,9 +555,9 @@ def make_require_value(m):
         """
         def for_partial(partial):
             if isinstance(node, PolicyNode):
-                if node.value is None:
+                if not node.value:
                     return m.mzero()
-            if node is None:
+            if not node:
                 return m.mzero()
             return m.unit( (None, partial) )
         return for_partial
