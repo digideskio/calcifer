@@ -132,12 +132,12 @@ class Context(BaseContext):
 
             return query_response['data']
 
-        sender = self.select("/sender")
-        receiver = self.select("/receiver")
+        sender_ctx = self.select("/sender")
+        receiver_ctx = self.select("/receiver")
 
         query_result_ctx = self.apply(
             run_query,
-            query_name, resource_name, sender, receiver
+            query_name, resource_name, sender_ctx, receiver_ctx
         )
 
         return query_result_ctx
