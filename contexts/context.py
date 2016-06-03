@@ -106,11 +106,11 @@ class Context(BaseContext):
         def run_query(query_name, resource_name, sender, receiver):
             logger.debug((
                 "run_query:\n"
-                "  query_name={}\n"
-                "  resource_name={}\n"
-                "  sender={}\n"
-                "  receiver={}"
-            ).format(query_name, resource_name, sender, receiver))
+                "  query_name=%s\n"
+                "  resource_name=%s\n"
+                "  sender=%r\n"
+                "  receiver=%r"
+            ), query_name, resource_name, sender, receiver)
 
             from dramafever.premium.services.dispatch import dispatcher
             query_sender = {k:v for k,v in receiver.items()}
@@ -127,8 +127,8 @@ class Context(BaseContext):
 
             query_response = dispatch.query(query_receiver, data)
             logger.debug((
-                "run_query result: {}"
-            ).format(query_response))
+                "run_query result: %r"
+            ), query_response)
 
             return query_response['data']
 
