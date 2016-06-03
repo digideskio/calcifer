@@ -7,7 +7,6 @@ for the purposes of template generation and command validation.
 N.B. These considered LOW-LEVEL operators. For command policy specification,
 use the operators in `dramafever.premium.commands` and not this module.
 """
-import logging
 from pymonad import List
 
 from dramafever.premium.services.policy.tree import PolicyNode
@@ -16,8 +15,6 @@ from dramafever.premium.services.policy.monads import (
 
     PolicyRule
 )
-
-logger = logging.getLogger(__name__)
 
 
 #
