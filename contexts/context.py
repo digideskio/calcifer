@@ -186,7 +186,7 @@ class Context(BaseContext):
         self.append(scope())
         return self
 
-    def fail_early_ctx(self):
+    def fail_early(self):
         return self.subctx(
             lambda policy_rules: unless_errors(*policy_rules)
         )
