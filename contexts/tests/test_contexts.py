@@ -84,7 +84,7 @@ class ContextTestCase(TestCase):
 
     def test_require(self):
         ctx = Context()
-        ctx.consumer_name.require()
+        ctx.require_consumer()
 
         obj = {
             "sender": {
