@@ -2,7 +2,7 @@ import logging
 
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, require_value, append_value,
-    forbid_value, children, each, scope, collect,
+    forbid_value, children, each, scope, collect, unless_errors,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -49,6 +49,12 @@ class Context(BaseContext):
             error_handler_ctx = self.__class__(name="error_handler")
             self.error_handler = error_handler_ctx
         return self.error_handler
+
+    def require_user(self):
+        error_ctx = self.user_guid.require().error_ctx()
+
+        error_ctx.select("message").set_value("User authenticated required.")
+        error_ctx.select("code").set_value("UNAUTHENTICATED")
 
     def require(self, *args):
         if len(args):
@@ -130,7 +136,7 @@ class Context(BaseContext):
                 "run_query result: %r"
             ), query_response)
 
-            return query_response['data']
+            return query_response
 
         sender_ctx = self.select("/sender")
         receiver_ctx = self.select("/receiver")
@@ -140,7 +146,25 @@ class Context(BaseContext):
             query_name, resource_name, sender_ctx, receiver_ctx
         )
 
-        return query_result_ctx
+        has_errors_ctx = self.check(
+            lambda res: res.get('errors'),
+            query_result_ctx
+        )
+
+        has_errors_ctx.add_error()
+        has_errors_ctx.last_error.select("code").set_value(
+            "CROSSSERVICE_QUERY_PROBLEM"
+        )
+        has_errors_ctx.last_error.select("errors").set_value(
+            has_errors_ctx.value
+        )
+
+        query_data_ctx = self.apply(
+            lambda res: res.get('data'),
+            query_result_ctx
+        )
+
+        return query_data_ctx
 
     def whitelist_values(self, values):
         subctx = self.named_subctx("whitelist_values")
@@ -151,6 +175,11 @@ class Context(BaseContext):
     def scope(self):
         self.append(scope())
         return self
+
+    def fail_early_ctx(self):
+        return self.subctx(
+            lambda policy_rules: unless_errors(*policy_rules)
+        )
 
     def add_error(self):
         self.append(add_error, {})

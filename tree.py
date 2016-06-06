@@ -9,10 +9,13 @@ Ultimately, the policy tree contains *definitions*, a higher-level abstraction
 on "value": LeafPolicyNode uses the property `definition`, which may compare
 to specific values or generate a template for procuring the value.
 """
-
 from abc import ABCMeta, abstractmethod
+import logging
 
 from dramafever.premium.services.policy.definitions import Value
+
+logger = logging.getLogger(__name__)
+
 
 class PolicyNode:
     """
@@ -118,6 +121,9 @@ class LeafPolicyNode(PolicyNode):
 
     def select(self, path=None):
         if path:
+            logger.debug((
+                "Attempting to select sub-path %r of %r"
+            ), path, self)
             raise Exception("Node cannot be traversed")
 
         return (self, self)
