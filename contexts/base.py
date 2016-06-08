@@ -1,12 +1,15 @@
 import copy
 import functools
+import logging
 
 from dramafever.premium.services.policy.operators import (
     wrap_context, attempt, trace, collect, unit, policies, regarding,
 )
 from dramafever.premium.services.policy.monads import (
-    PolicyRule, PolicyRuleFunc
+    PolicyRule, PolicyRuleFunc, get_call_repr
 )
+
+logger = logging.getLogger(__name__)
 
 
 def ctx_apply(f, got, remaining):
@@ -407,6 +410,39 @@ class BaseContext(object):
         )
         return apply_ctx
 
+    def memoized_apply(self, func, *args):
+        class MemoKey(object):
+            def __init__(self, *true_args):
+                self.true_args = true_args
+
+            def __cmp__(self, other):
+                return cmp(self.true_args, other.true_args)
+
+            def __hash__(self):
+                return make_hash( self.true_args )
+
+            def __repr__(self):
+                return "<MemoKey {}>".format(
+                    get_call_repr(*self.true_args)
+                )
+
+        @functools.wraps(func)
+        def memoized_func(*true_args):
+            if not hasattr(memoized_func, 'memo'):
+                memoized_func.memo = {}
+            memo = memoized_func.memo
+            key = MemoKey(*true_args)
+            if key in memo:
+                logger.debug("Found memo key: %r", key)
+                return memo[key]
+            result = func(*true_args)
+            logger.debug("Adding memo key: %r", key)
+            logger.debug("Existing memo keys: %r", memo.keys())
+            memo[key] = result
+            return result
+
+        return self.apply(memoized_func, *args)
+
     def check(self, func, *func_args):
         def make_check_wrapper(func):
             def check_wrapper(policy_rules):
@@ -480,3 +516,22 @@ class ContextFrame(object):
     def __deepcopy__(self, memo):
         # you get a new object but you're not copying that AST
         return ContextFrame(self.name, self.policy_ast, self.error_handler)
+
+
+# from http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
+def make_hash(o):
+    """
+    Makes a hash from a dictionary, list, tuple or set to any level, that contains
+    only other hashable types (including any lists, tuples, sets, and
+    dictionaries).
+    """
+    if isinstance(o, (set, tuple, list)):
+        return hash(tuple([make_hash(e) for e in o]))
+    elif not isinstance(o, dict):
+        return hash(o)
+
+    new_o = copy.deepcopy(o)
+    for k, v in new_o.items():
+        new_o[k] = make_hash(v)
+
+    return hash(tuple(frozenset(sorted(new_o.items()))))
