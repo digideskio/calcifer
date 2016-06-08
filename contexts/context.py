@@ -151,7 +151,7 @@ class Context(BaseContext):
         sender_ctx = self.select("/sender")
         receiver_ctx = self.select("/receiver")
 
-        query_result_ctx = self.apply(
+        query_result_ctx = self.memoized_apply(
             run_query,
             query_name, resource_name, sender_ctx, receiver_ctx
         )
