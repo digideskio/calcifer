@@ -1,5 +1,6 @@
 import logging
 
+from dramafever.premium.services.client import ServiceClient
 from dramafever.premium.services.policy.operators import (
     policies, regarding, set_value, permit_values, require_value, append_value,
     forbid_value, children, each, scope, collect, unless_errors,
@@ -128,22 +129,17 @@ class Context(BaseContext):
                 "  receiver=%r"
             ), query_name, resource_name, sender, receiver)
 
-            from dramafever.premium.services.dispatch import dispatcher
             query_sender = {k:v for k,v in receiver.items()}
             query_sender.update(sender)
-            dispatch = dispatcher.connect_as(**query_sender)
-            query_receiver = {
-                "resource_name": resource_name,
-                "query_name": query_name,
-            }
-            if resource_id is not None:
-                query_receiver["resource_id"] = resource_id
 
-            data = {"params": params}
+            query_client = ServiceClient(**query_sender)
 
-            query_response = dispatch.query(query_receiver, data)
+            query_response = query_client.query(
+                query_name, resource_name, resource_id, params
+            )
+
             logger.debug((
-                "run_query result: %r"
+                "run_query response: %r"
             ), query_response)
 
             return query_response
