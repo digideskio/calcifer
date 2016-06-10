@@ -75,7 +75,11 @@ class Context(BaseContext):
 
         subctx = self.named_subctx("require")
 
-        subctx.error_ctx().select("message").set_value(
+        error_ctx = subctx.error_ctx()
+        error_ctx.select("code").set_value(
+            "MISSING_REQUIRED_VALUE"
+        )
+        error_ctx.select("message").set_value(
             "Value is required."
         )
 
@@ -186,6 +190,9 @@ class Context(BaseContext):
         return self.subctx(
             lambda policy_rules: unless_errors(*policy_rules)
         )
+
+    def err(self):
+        return self.fail().or_error()
 
     def add_error(self):
         self.append(add_error, {})

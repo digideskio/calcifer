@@ -4,6 +4,7 @@ import logging
 
 from dramafever.premium.services.policy.operators import (
     wrap_context, attempt, trace, collect, unit, policies, regarding,
+    fail,
 )
 from dramafever.premium.services.policy.monads import (
     PolicyRule, PolicyRuleFunc, get_call_repr
@@ -497,6 +498,10 @@ class BaseContext(object):
 
     def select(self, scope):
         return self.scope_subctx(scope, 'select("{}")'.format(scope))
+
+    def fail(self):
+        self.append(fail())
+        return self
 
     def __repr__(self):
         return (
