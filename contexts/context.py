@@ -59,6 +59,12 @@ class Context(BaseContext):
         )
         error_ctx.select("code").set_value("UNAUTHENTICATED")
 
+    def require_resource_id(self):
+        error_ctx = self.resource_id.require().error_ctx()
+        error_ctx.select("message").set_value("Resource id required.")
+        error_ctx.select("code").set_value("NOT FOUND")
+        return error_ctx
+
     def require_consumer(self):
         error_ctx = self.consumer_name.require().error_ctx()
 
