@@ -179,7 +179,11 @@ class Context(BaseContext):
     def whitelist_values(self, values):
         subctx = self.named_subctx("whitelist_values")
         subctx.append(permit_values, values).or_error()
-        subctx.error_ctx().select("code").set_value("INVALID_VALUE")
+
+        error_ctx = subctx.error_ctx()
+        error_ctx.select("code").set_value("INVALID_VALUE_SELECTION")
+        error_ctx.select("values").set_value(values)
+
         return subctx
 
     def scope(self):
