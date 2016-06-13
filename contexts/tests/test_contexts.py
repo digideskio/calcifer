@@ -82,26 +82,21 @@ class ContextTestCase(TestCase):
         result = run_policy(ctx.finalize(), {"foo": "zebra"})
         self.assertEquals(result['bar'], "zebra")
 
-    def test_require(self):
+    def test_require_resource_id(self):
         ctx = Context()
-        ctx.require_consumer()
+        ctx.require_resource_id()
 
-        obj = {
-            "sender": {
-            },
-            "errors": [],
-            "context": [],
-        }
+        obj = {"sender": {}, "errors": [], "context": []}
 
         result = run_policy(ctx.finalize(), obj)
 
         error = result["errors"][0]
 
-        self.assertEquals(error["scope"], "/sender/consumer_name")
+        self.assertEquals(error["scope"], "/receiver/resource_id")
         self.assertEquals(error["value"], None)
         self.assertEquals(len(error["context"]), 2)
 
-        expected_context_names = ["consumer_name", "require"]
+        expected_context_names = ["resource_id", "require"]
         actual_context_names = [frame.name for frame in error["context"]]
         self.assertEquals(expected_context_names, actual_context_names)
 
