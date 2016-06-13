@@ -136,7 +136,7 @@ class Context(BaseContext):
             query_sender = {k:v for k,v in receiver.items()}
             query_sender.update(sender)
 
-            query_client = ServiceClient(**query_sender)
+            query_client = ServiceClient.for_sender(query_sender)
 
             query_response = query_client.query(
                 query_name, resource_name, resource_id, params
