@@ -52,26 +52,31 @@ class Context(BaseContext):
         return self.error_handler
 
     def require_user(self):
-        error_ctx = self.user_guid.require().error_ctx()
+        require_ctx = self.user_guid.require()
+        error_ctx = require_ctx.error_ctx()
 
         error_ctx.select("message").set_value(
             "User authentication required."
         )
         error_ctx.select("code").set_value("UNAUTHENTICATED")
-
-    def require_resource_id(self):
-        error_ctx = self.resource_id.require().error_ctx()
-        error_ctx.select("message").set_value("Resource id required.")
-        error_ctx.select("code").set_value("NOT FOUND")
-        return error_ctx
+        return require_ctx
 
     def require_consumer(self):
-        error_ctx = self.consumer_name.require().error_ctx()
+        require_ctx = self.consumer_name.require()
+        error_ctx = require_ctx.error_ctx()
 
         error_ctx.select("message").set_value(
             "Consumer authentication required."
         )
         error_ctx.select("code").set_value("UNAUTHENTICATED")
+        return require_ctx
+
+    def require_resource_id(self):
+        require_ctx = self.resource_id.require()
+        error_ctx = require_ctx.error_ctx()
+        error_ctx.select("message").set_value("Resource id required.")
+        error_ctx.select("code").set_value("NOT FOUND")
+        return require_ctx
 
     def require(self, *args):
         if len(args):
