@@ -189,11 +189,19 @@ set_path = make_set_path(List)
 
 def make_define_as(m):
     @policy_rule_func(m)
-    def define_as(definition):
+    def define_as(field):
         """
         Sets the path for the current scope
         """
         def for_partial(partial):
+            if (
+                not hasattr(field, 'match') and
+                hasattr(field, 'definition')
+            ):
+                definition = field.definition
+            else:
+                definition = field
+
             new_definition, new_partial = partial.define_as(definition)
             if new_definition is None:
                 return m.mzero()
