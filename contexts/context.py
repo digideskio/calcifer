@@ -125,14 +125,13 @@ class Context(BaseContext):
         if params is None:
             params = {}
 
-        def run_query(query_name, resource_name, sender, receiver):
+        def run_query(
+            query_name, resource_name, resource_id, params, sender, receiver
+        ):
             logger.debug((
-                "run_query:\n"
-                "  query_name=%s\n"
-                "  resource_name=%s\n"
-                "  sender=%r\n"
-                "  receiver=%r"
-            ), query_name, resource_name, sender, receiver)
+                "run_query query_name:%s resource_name:%s resource_id:%s "
+                "params:%r (sender:%r receiver:%r)"
+            ), query_name, resource_name, resource_id, params, sender, receiver)
 
             query_sender = {k:v for k,v in receiver.items()}
             query_sender.update(sender)
@@ -154,7 +153,7 @@ class Context(BaseContext):
 
         query_result_ctx = self.memoized_apply(
             run_query,
-            query_name, resource_name, sender_ctx, receiver_ctx
+            query_name, resource_name, resource_id, params, sender_ctx, receiver_ctx
         )
 
         has_errors_ctx = self.check(
