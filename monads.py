@@ -161,6 +161,19 @@ def policyM(m):
                 binding.value, ast=new_ast
             )
 
+        def __rshift__(self, function):
+            """
+            The bind operator. `>>` and `bind` are equivalent.
+
+            Note: this overrides Monad.__rshift__ because the inherited
+            implementation makes it impossible to perform the
+            `_bind_policy_rule` optimization above.
+            """
+            result = self.bind(function)
+            if not isinstance(result, Monad):
+                raise TypeError("Operator '>>' must return a Monad instance.")
+            return result
+
     return PolicyRule
 
 
