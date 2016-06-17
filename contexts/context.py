@@ -2,8 +2,8 @@ import logging
 
 from dramafever.premium.services.client import ServiceClient
 from dramafever.premium.services.policy.operators import (
-    policies, regarding, set_value, permit_values, require_value, append_value,
-    forbid_value, children, each, scope, collect, unless_errors,
+    set_value, permit_values, require_value, append_value,
+    forbid_value, children, each, collect, unless_errors,
 )
 from dramafever.premium.services.policy.contexts.policies import (
     add_error
@@ -112,15 +112,6 @@ class Context(BaseContext):
         self.append(append_value, value)
         return self
 
-    def add_values(self, values):
-        self.append(lambda true_values: (
-            policies(*[
-                regarding("{}".format(name), set_value(value))
-                for name, value in true_values.items()
-            ])
-        ), values)
-        return self
-
     def query(self, query_name, resource_name, resource_id=None, params=None):
         if params is None:
             params = {}
@@ -185,10 +176,6 @@ class Context(BaseContext):
         error_ctx.select("values").set_value(values)
 
         return subctx
-
-    def scope(self):
-        self.append(scope())
-        return self
 
     def fail_early(self):
         return self.subctx(

@@ -91,14 +91,6 @@ class Partial(object):
         node, new_root = self._root.select(selected_path)
         return node, Partial(new_root, new_path)
 
-    def set_path(self, path=None):
-        if path is None:
-            path = []
-        _, new_item = self.select(JsonPointer.from_parts(path).path)
-        return (
-            None, new_item
-        )
-
     def define_as(self, definition):
         existing_value = self.scope_value
         if existing_value:
