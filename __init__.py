@@ -23,7 +23,6 @@ from dramafever.premium.services.policy.operators import (
     get_node,
     get_value,
     match,
-    path,
     permit_values,
     policies,
     pop_context,
@@ -32,13 +31,11 @@ from dramafever.premium.services.policy.operators import (
     require_value,
     scope,
     select,
-    set_path,
     set_value,
     trace,
     unit,
     unit_value,
     unless_errors,
-    with_value,
     wrap_context,
 )
 from dramafever.premium.services.policy.partial import Partial

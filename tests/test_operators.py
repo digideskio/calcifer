@@ -22,14 +22,12 @@ policyI = operators.make_policies(Identity)
 regardingI = operators.make_regarding(Identity)
 selectI = operators.make_select(Identity)
 matchI = operators.make_match(Identity)
-with_valueI = operators.make_with_value(Identity)
 
 set_valueM = operators.make_set_value(Maybe)
 policyM = operators.make_policies(Maybe)
 regardingM = operators.make_regarding(Maybe)
 selectM = operators.make_select(Maybe)
 matchM = operators.make_match(Maybe)
-with_valueM = operators.make_with_value(Maybe)
 
 class PolicyTestCase(TestCase):
     def test_select(self):

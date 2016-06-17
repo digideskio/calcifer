@@ -82,19 +82,6 @@ def make_select(m):
 select = make_select(List)
 
 
-def make_path(m):
-    @policy_rule_func(m)
-    def path():
-        """
-        Retrieves the path for the current scope
-        """
-        def for_partial(partial):
-            return m.unit( (partial.path, partial) )
-        return for_partial
-    return path
-path = make_path(List)
-
-
 def make_scope(m):
     @policy_rule_func(m)
     def scope():
@@ -174,19 +161,6 @@ def make_append_value(m):
 append_value = make_append_value(List)
 
 
-def make_set_path(m):
-    @policy_rule_func(m)
-    def set_path(new_path):
-        """
-        Sets the path for the current scope
-        """
-        def for_partial(partial):
-            return m.unit( partial.set_path(new_path) )
-        return for_partial
-    return set_path
-set_path = make_set_path(List)
-
-
 def make_define_as(m):
     @policy_rule_func(m)
     def define_as(field):
@@ -209,23 +183,6 @@ def make_define_as(m):
         return for_partial
     return define_as
 define_as = make_define_as(List)
-
-
-def make_with_value(m):
-    def with_value(func):
-        """
-        Given a function `func(node_value): PolicyRule`, returns a function
-        that takes a node and calls `func` with the node's value
-        """
-        def for_node(node):
-            def for_partial(partial):
-                return func(node.value).run(partial)
-            return for_partial
-        return policy_rule_func(
-            m, get_call_repr("with_value", func)
-        )(for_node)
-    return with_value
-with_value = make_with_value(List)
 
 
 def make_check(m):
