@@ -14,6 +14,7 @@ version = release = __version__
 needs_sphinx = '1.0'
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
 ]
@@ -27,7 +28,7 @@ html_static_path = []
 exclude_patterns = []
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
+    import sphinx_rtd_theme  # pylint: disable=C0413
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
