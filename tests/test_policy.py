@@ -1,4 +1,5 @@
 # pylint: disable=no-self-argument
+import unittest
 from unittest import TestCase
 
 from calcifer.partial import Partial
@@ -70,3 +71,7 @@ class PolicyProviderTestCase(TestCase):
             "list": []
         })
         self.assertEquals(results[0], [1,2,3])
+
+
+if __name__ == '__main__':
+    unittest.main()

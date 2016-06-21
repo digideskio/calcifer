@@ -1,6 +1,7 @@
 import random
 import logging
 
+import unittest
 from unittest import TestCase
 
 from calcifer.utils import run_policy
@@ -507,3 +508,7 @@ class ContextTestCase(TestCase):
 
         self.assertIn("errors", result)
         self.assertTrue(len(result['errors']))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,4 +1,6 @@
+import unittest
 from unittest import TestCase
+
 from pymonad import Just, List, Maybe
 
 from calcifer.monads import (
@@ -449,3 +451,7 @@ class PolicyBuilderTestCase(TestCase):
         self.assertIsInstance(root, dict)
 
         self.assertEquals(root, ref_obj)
+
+
+if __name__ == '__main__':
+    unittest.main()
