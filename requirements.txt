@@ -1,0 +1,2 @@
+jsonpointer==1.10
+PyMonad==1.3
