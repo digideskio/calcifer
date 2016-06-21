@@ -359,7 +359,7 @@ class PolicyBuilderTestCase(TestCase):
             def for_actual(actual):
                 def checker():
                     return assertEquals(actual, expected, msg)
-                return checker
+                return check(checker)
 
             return scope() >> for_actual
 
