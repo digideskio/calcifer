@@ -1,9 +1,9 @@
 # pylint: disable=no-self-argument
-from django.test import TestCase
+from unittest import TestCase
 
-from dramafever.premium.services.policy.partial import Partial
+from calcifer.partial import Partial
 
-from dramafever.premium.services.policy.policy import BasePolicy
+from calcifer.policy import BasePolicy
 
 
 class PolicyProviderTestCase(TestCase):

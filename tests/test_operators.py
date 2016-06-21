@@ -1,18 +1,18 @@
-from django.test import TestCase
+from unittest import TestCase
 from pymonad import Just, List, Maybe
 
-from dramafever.premium.services.policy.monads import (
+from calcifer.monads import (
     Identity, policy_rule_func
 )
-from dramafever.premium.services.policy.tree import (
+from calcifer.tree import (
     LeafPolicyNode, DictPolicyNode, UnknownPolicyNode, Value
 )
-from dramafever.premium.services.policy import (
+from calcifer import (
     Partial,
     set_value, select, check, policies, regarding, fail, match, attempt,
     permit_values, define_as, children, each, scope,
 )
-from dramafever.premium.services.policy import operators
+from calcifer import operators
 
 
 # set up the operators for the Identity and Maybe monads for
@@ -32,8 +32,11 @@ matchM = operators.make_match(Maybe)
 class PolicyTestCase(TestCase):
     def test_select(self):
         policy = DictPolicyNode()
-        policy["foo"] = DictPolicyNode()
-        policy["foo"]["bar"] = LeafPolicyNode(Value(5))
+        foo_node = DictPolicyNode()
+        bar_node = LeafPolicyNode(Value(5))
+
+        foo_node['bar'] = bar_node
+        policy["foo"] = foo_node
 
         item = Partial(policy)
 
@@ -58,8 +61,10 @@ class PolicyTestCase(TestCase):
 
     def test_select_no_set_path(self):
         policy = DictPolicyNode()
-        policy["foo"] = DictPolicyNode()
-        policy["foo"]["bar"] = LeafPolicyNode(Value(5))
+        foo_node = DictPolicyNode()
+        bar_node = LeafPolicyNode(Value(5))
+        foo_node["bar"] = bar_node
+        policy["foo"] = foo_node
 
         item = Partial(policy)
 
@@ -103,7 +108,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regardingM(self):
         rule = policyM(
-           regardingM("/fields/foo", set_valueM("foo")),
+            regardingM("/fields/foo", set_valueM("foo")),
         )
 
         maybe = rule.run( Partial() )
@@ -115,8 +120,8 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_policyM_multiple(self):
         rule = policyM(
-           regardingM("/fields/foo", set_valueM("foo")),
-           regardingM("/fields/foo", set_valueM("bar")),
+            regardingM("/fields/foo", set_valueM("foo")),
+            regardingM("/fields/foo", set_valueM("bar")),
         )
 
         maybe = rule.run( Partial() )
@@ -128,11 +133,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regardingM_multiple(self):
         rule = policyM(
-           regardingM(
-               "/fields/foo",
-               set_valueM("foo"),
-               set_valueM("bar")
-           )
+            regardingM("/fields/foo", set_valueM("foo"), set_valueM("bar"))
         )
 
         maybe = rule.run( Partial() )
@@ -261,8 +262,10 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_attempt(self):
         rule = policies(
-            regarding("/fields",
-                regarding("foo",
+            regarding(
+                "/fields",
+                regarding(
+                    "foo",
                     permit_values(["foo", "bar"]),
                     attempt(
                         match("foo"),
@@ -284,8 +287,10 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_fail(self):
         rule = policies(
-            regarding("/fields",
-                regarding("foo",
+            regarding(
+                "/fields",
+                regarding(
+                    "foo",
                     permit_values(["foo", "bar"]),
                     fail(),
                 )
@@ -320,7 +325,8 @@ class PolicyBuilderTestCase(TestCase):
         definition = Value(5)
 
         rule = policies(
-            regarding("/fields/foo",
+            regarding(
+                "/fields/foo",
                 define_as(definition)
             )
         )
@@ -348,15 +354,20 @@ class PolicyBuilderTestCase(TestCase):
         assertEquals = self.assertEquals
         @policy_rule_func(List)
         def expect_scope(expected="/", msg=None):
-            return scope() >> (lambda actual:
-                check(lambda: assertEquals(actual, expected, msg=msg))
-            )
+            def for_actual(actual):
+                def checker():
+                    return assertEquals(actual, expected, msg)
+                return checker
 
-        rule = regarding("",
+            return scope() >> for_actual
+
+        rule = regarding(
+            "",
             expect_scope("/", 0),
             regarding("a", expect_scope("/a", 1)),
             expect_scope("/", 2),
-            regarding("b",
+            regarding(
+                "b",
                 expect_scope("/b", 3),
                 regarding("c", expect_scope("/b/c", 4)),
                 expect_scope("/b", 5),
