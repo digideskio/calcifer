@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-version_info = (0, 0, 0)
-__version__ = '.'.join(str(v) for v in version_info[:3])
-
 """
 calcifer top-level module
 
@@ -47,3 +44,7 @@ from calcifer.monads import (
     PolicyRule, PolicyRuleFunc
 )
 from calcifer.policy import BasePolicy
+
+
+version_info = (0, 0, 0)
+__version__ = '.'.join(str(v) for v in version_info[:3])

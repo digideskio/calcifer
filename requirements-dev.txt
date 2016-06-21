@@ -3,7 +3,6 @@
 
 detox
 coverage
-pylint
 Sphinx
 sphinx-rtd-theme
 tox
