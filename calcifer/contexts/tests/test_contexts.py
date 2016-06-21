@@ -1,16 +1,16 @@
 import random
 import logging
 
-from django.test import TestCase
+from unittest import TestCase
 
-from dramafever.premium.services.tests.utils import run_policy
+from calcifer.utils import run_policy
 
-from dramafever.premium.services.policy.contexts.base import Incomplete
-from dramafever.premium.services.policy.contexts import (
+from calcifer.contexts.base import Incomplete
+from calcifer.contexts import (
     Context
 )
 
-from dramafever.premium.services.policy import (
+from calcifer import (
     regarding, set_value, unit,
 
     asts, PolicyRule
@@ -397,7 +397,8 @@ class ContextTestCase(TestCase):
             return "some kind of brown goo"
 
         # then you'll mix your ingredients...
-        mixed_ctx = workstation_ctx.apply(mix,
+        mixed_ctx = workstation_ctx.apply(
+            mix,
             first_substance, second_substance
         )
         resulting_mixture = mixed_ctx.value
@@ -474,7 +475,8 @@ class ContextTestCase(TestCase):
                 return 'concentrated danger'
             return 'more brown goo'
 
-        mixed_ctx = workstation_ctx.apply(mix,
+        mixed_ctx = workstation_ctx.apply(
+            mix,
             first_substance, second_substance
         )
         resulting_mixture = mixed_ctx.value
@@ -488,7 +490,8 @@ class ContextTestCase(TestCase):
             return False
 
         # we can't have that.
-        danger_ctx = mixed_ctx.check(danger,
+        danger_ctx = mixed_ctx.check(
+            danger,
             resulting_mixture
         )
         danger_ctx.forbid()

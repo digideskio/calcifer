@@ -1,5 +1,5 @@
 """
-`dramafever.premium.services.policy` module
+calcifer top-level module
 
 The purpose of this module is to provide runtime validation and template
 generation for commands.
@@ -9,8 +9,8 @@ manipulation of a "Policy Partial" data structure to be used in validation and
 template generation. The operators are designed to provide flexible
 tooling for the creation of high-level policy rules.
 """
-from dramafever.premium.services.policy.contexts import Context
-from dramafever.premium.services.policy.operators import (
+from calcifer.contexts import Context
+from calcifer.operators import (
     attempt,
     append_value,
     check,
@@ -38,8 +38,8 @@ from dramafever.premium.services.policy.operators import (
     unless_errors,
     wrap_context,
 )
-from dramafever.premium.services.policy.partial import Partial
-from dramafever.premium.services.policy.monads import (
+from calcifer.partial import Partial
+from calcifer.monads import (
     PolicyRule, PolicyRuleFunc
 )
-from dramafever.premium.services.policy.policy import BasePolicy
+from calcifer.policy import BasePolicy

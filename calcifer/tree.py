@@ -1,5 +1,5 @@
 """
-`dramafever.premium.services.policy.tree` module
+`calcifer.tree` module
 
 This module implements a non-deterministic nested dictionary (tree).
 The tree comprises leaf nodes, dict nodes, and "unknown nodes" -- nodes
@@ -12,7 +12,7 @@ to specific values or generate a template for procuring the value.
 from abc import ABCMeta, abstractmethod
 import logging
 
-from dramafever.premium.services.policy.definitions import Value
+from calcifer.definitions import Value
 
 logger = logging.getLogger(__name__)
 

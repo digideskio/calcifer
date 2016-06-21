@@ -1,5 +1,5 @@
 """
-`dramafever.premium.services.policy.partial` module
+`calcifer.partial` module
 
 This module is used to provide the specific data structure used in the
 stateful computation of command policy.
@@ -13,7 +13,7 @@ the policy tree or the pointer, or both.
 """
 from jsonpointer import JsonPointer
 
-from dramafever.premium.services.policy.tree import (
+from calcifer.tree import (
     PolicyNode, UnknownPolicyNode, LeafPolicyNode
 )
 
@@ -45,7 +45,7 @@ class Partial(object):
     def scope(self):
         sel = self._pointer.path
         if not sel:
-            sel = '/'
+            sel = u'/'
         return sel
 
     @property

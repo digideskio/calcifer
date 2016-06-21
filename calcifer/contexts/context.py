@@ -1,14 +1,13 @@
 import logging
 
-from dramafever.premium.services.client import ServiceClient
-from dramafever.premium.services.policy.operators import (
+from calcifer.operators import (
     set_value, permit_values, require_value, append_value,
     forbid_value, children, each, collect, unless_errors,
 )
-from dramafever.premium.services.policy.contexts.policies import (
+from calcifer.contexts.policies import (
     add_error
 )
-from dramafever.premium.services.policy.contexts.base import BaseContext
+from calcifer.contexts.base import BaseContext
 
 logger = logging.getLogger(__name__)
 
@@ -112,61 +111,6 @@ class Context(BaseContext):
         self.append(append_value, value)
         return self
 
-    def query(self, query_name, resource_name, resource_id=None, params=None):
-        if params is None:
-            params = {}
-
-        def run_query(
-            query_name, resource_name, resource_id, params, sender, receiver
-        ):
-            logger.debug((
-                "run_query query_name:%s resource_name:%s resource_id:%s "
-                "params:%r (sender:%r receiver:%r)"
-            ), query_name, resource_name, resource_id, params, sender, receiver)
-
-            query_sender = {k:v for k,v in receiver.items()}
-            query_sender.update(sender)
-
-            query_client = ServiceClient.for_sender(query_sender)
-
-            query_response = query_client.query(
-                query_name, resource_name, resource_id, params
-            )
-
-            logger.debug((
-                "run_query response: %r"
-            ), query_response)
-
-            return query_response
-
-        sender_ctx = self.select("/sender")
-        receiver_ctx = self.select("/receiver")
-
-        query_result_ctx = self.memoized_apply(
-            run_query,
-            query_name, resource_name, resource_id, params, sender_ctx, receiver_ctx
-        )
-
-        has_errors_ctx = self.check(
-            lambda res: res.get('errors'),
-            query_result_ctx
-        )
-
-        has_errors_ctx.add_error()
-        has_errors_ctx.last_error.select("code").set_value(
-            "CROSSSERVICE_QUERY_PROBLEM"
-        )
-        has_errors_ctx.last_error.select("errors").set_value(
-            has_errors_ctx.value
-        )
-
-        query_data_ctx = self.apply(
-            lambda res: res.get('data'),
-            query_result_ctx
-        )
-
-        return query_data_ctx
-
     def whitelist_values(self, values):
         subctx = self.named_subctx("whitelist_values")
         subctx.append(permit_values, values).or_error()
@@ -251,7 +195,7 @@ class Context(BaseContext):
 
     def children(self):
         children_ctx = self.subctx(
-           lambda policy_rules: (
+            lambda policy_rules: (
                 children() >> collect(*policy_rules)
             )
         )

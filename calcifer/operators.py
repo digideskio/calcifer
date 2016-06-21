@@ -3,15 +3,12 @@ Premium Command Policy StateT Operators.
 
 These are provided as building blocks for specifying Premium Command Policies
 for the purposes of template generation and command validation.
-
-N.B. These considered LOW-LEVEL operators. For command policy specification,
-use the operators in `dramafever.premium.commands` and not this module.
 """
 import logging
 from pymonad import List
 
-from dramafever.premium.services.policy.tree import PolicyNode
-from dramafever.premium.services.policy.monads import (
+from calcifer.tree import PolicyNode
+from calcifer.monads import (
     policy_rule_func, get_call_repr,
 
     PolicyRule
@@ -154,8 +151,8 @@ def make_append_value(m):
             else:
                 raise NotImplementedError
 
-        return get_value() >> (lambda collection:
-            set_value(append_to(collection))
+        return get_value() >> (
+            lambda collection: set_value(append_to(collection))
         )
     return append_value
 append_value = make_append_value(List)
@@ -169,8 +166,8 @@ def make_define_as(m):
         """
         def for_partial(partial):
             if (
-                not hasattr(field, 'match') and
-                hasattr(field, 'definition')
+                    not hasattr(field, 'match') and
+                    hasattr(field, 'definition')
             ):
                 definition = field.definition
             else:

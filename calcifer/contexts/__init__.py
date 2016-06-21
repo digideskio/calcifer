@@ -1,6 +1,6 @@
 """
-`dramafever.premium.services.policy.contexts` module
-````````````````````````````````````````````````````
+`calcifer.contexts` module
+``````````````````````````
 
 Overview and Purpose
 ====================
@@ -51,6 +51,6 @@ A context object may be used for either or both of the following purposes:
    `somectx.value`, and can only be used as arguments for methods in contexts
    descending from the value provider (`somectx`)
 """
-from dramafever.premium.services.policy.contexts.context import (
+from calcifer.contexts.context import (
     Context
 )

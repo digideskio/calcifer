@@ -1,5 +1,5 @@
 """
-`dramafever.premium.services.policy.monads` module
+`calcifer.monads` module
 
 Mainly this module provides an implementation of the StateT monad transformer.
 The StateT monad is used for non-deterministic generation of templates for
@@ -28,8 +28,8 @@ import inspect
 import logging
 from pymonad import Monad
 
-from dramafever.premium.services.policy import asts
-from dramafever.premium.services.policy.asts import get_call_repr # pylint: disable=unused-import
+from calcifer import asts
+from calcifer.asts import get_call_repr # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +105,8 @@ class BasePolicyRule(object):
 def policyM(m):
     class PolicyRule(BasePolicyRule, stateT(m)):
         def __init__(
-            self, for_partial, context=None,
-            ast=None,
+                self, for_partial, context=None,
+                ast=None,
         ):
             if ast is None:
                 ast = getattr(for_partial, 'ast', None)
@@ -150,9 +150,10 @@ def policyM(m):
             try:
                 binding = super(PolicyRule, self).bind(rule_func)
             except:
-                logger.debug((
-                    "error binding `{}` to rule_func `{}`"
-                ).format(repr(self), repr(rule_func)))
+                logger.debug(
+                    "error binding `%r` to rule_func `%r`",
+                    self, rule_func
+                )
                 raise
 
             new_ast = asts.Binding(self.ast, rule_func.ast)

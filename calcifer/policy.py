@@ -1,10 +1,9 @@
 import copy
 import logging
-import types
 
-from dramafever.premium.services.policy.contexts import Context
-from dramafever.premium.services.policy.partial import Partial
-from dramafever.premium.services.policy.operators import unless_errors
+from calcifer.contexts import Context
+from calcifer.partial import Partial
+from calcifer.operators import unless_errors
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ class BasePolicy(object):
     ctx_class = Context
 
     def __init__(self, *args, **kwargs):
-        if len(args) == 1 and type(args[0]) == types.FunctionType:
+        if len(args) == 1 and callable(args[0]):
             method = args[0]
             self(method)
 
@@ -92,7 +91,7 @@ class BasePolicy(object):
 
             includes = copy.copy(self.includes)
             for include in includes:
-                if type(include) == str:
+                if isinstance(include, str):
                     policy = getattr(self.parent, include)
                 else:
                     policy = include

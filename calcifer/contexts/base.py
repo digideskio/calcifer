@@ -2,11 +2,11 @@ import copy
 import functools
 import logging
 
-from dramafever.premium.services.policy.operators import (
+from calcifer.operators import (
     wrap_context, attempt, trace, collect, unit, policies, regarding,
     fail,
 )
-from dramafever.premium.services.policy.monads import (
+from calcifer.monads import (
     PolicyRule, PolicyRuleFunc, get_call_repr
 )
 
@@ -375,14 +375,12 @@ class BaseContext(object):
         return attempt_ctx, catch
 
     def trace(self, value=None):
-        return self.subctx(
-            lambda policy_rules: (
-                lambda true_value: (
-                    unit(true_value) >> trace(*policy_rules)
-                )
-            ),
-            value
-        )
+        def trace_for_policy_rules(policy_rules):
+            def trace_for_true_value(true_value):
+                return unit(true_value) >> trace(*policy_rules)
+            return trace_for_true_value
+
+        return self.subctx(trace_for_policy_rules, value)
 
     def or_catch(self):
         """
@@ -395,6 +393,11 @@ class BaseContext(object):
         return catch_ctx
 
     def apply(self, func, *args):
+        def apply_for_policy_rules(policy_rules):
+            def apply_for_true_args(*true_args):
+                return collect(*policy_rules)(func(*true_args))
+            return apply_for_true_args
+
         if hasattr(func, '__name__'):
             func_name = func.__name__
         else:
@@ -402,11 +405,7 @@ class BaseContext(object):
 
         apply_ctx = self.named_subctx(
             "apply({})".format(func_name),
-            lambda policy_rules: (
-                lambda *true_args: (
-                    collect(*policy_rules)(func(*true_args))
-                )
-            ),
+            apply_for_policy_rules,
             *args
         )
         return apply_ctx
@@ -457,41 +456,32 @@ class BaseContext(object):
             return check_wrapper
 
         ctx_name = "check({})".format(func.__name__)
-        subctx = self.named_subctx(ctx_name,
-            make_check_wrapper(func), *func_args
+        subctx = self.named_subctx(
+            ctx_name,
+            make_check_wrapper(func),
+            *func_args
         )
         return subctx
 
     def scope_item_subctx(self, parent, child, name=None):
-        subctx = self.subctx(
-            lambda policy_rules: (
-                lambda parent_name, child_name: (
-                    regarding(
-                        "{}/{}".format(parent_name, child_name),
-                        *policy_rules
-                    )
+        def scope_item_subctx_for_policy_rules(policy_rules):
+            def scope_item_subctx_for_true_relations(true_parent, true_child):
+                return regarding(
+                    "{}/{}".format(true_parent, true_child),
+                    *policy_rules
                 )
-            ),
-            parent, child
-        )
-
+            return scope_item_subctx_for_true_relations
+        subctx = self.subctx(scope_item_subctx_for_policy_rules, parent, child)
         if name is not None:
             subctx.ctx_name = name
-
         return subctx
 
     def scope_subctx(self, scope, name=None):
-        subctx = self.subctx(
-            lambda policy_rules: (
-                lambda true_scope: (
-                    regarding(
-                        "{}".format(true_scope),
-                        *policy_rules
-                    )
-                )
-            ),
-            scope
-        )
+        def scope_subctx_for_policy_rules(policy_rules):
+            def scope_subctx_for_true_scope(true_scope):
+                return regarding(true_scope, *policy_rules)
+            return scope_subctx_for_true_scope
+        subctx = self.subctx(scope_subctx_for_policy_rules, scope)
         if name is not None:
             subctx.ctx_name = name
         return subctx
