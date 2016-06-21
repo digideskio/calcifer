@@ -1,5 +1,5 @@
 -r requirements.txt
--r test-requirements.txt
+-r requirements-tests.txt
 
 detox
 coverage

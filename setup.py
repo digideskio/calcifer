@@ -20,7 +20,7 @@ setup(
     include_package_data=True,
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
     install_requires=read_requirements_file('requirements.txt'),
-    tests_require=read_requirements_file('test-requirements.txt'),
+    tests_require=read_requirements_file('requirements-tests.txt'),
     test_suite='nose.collector',
     author='DramaFever',
     author_email='admin@dramafever.com',

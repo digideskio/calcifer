@@ -1,10 +1,10 @@
 include HISTORY.rst
 include LICENSE
 include README.rst
-include dev-requirements.txt
+include requirements-dev.txt
 graft docs
 include requirements.txt
-include test-requirements.txt
+include requirements-tests.txt
 graft tests
 include tox.ini
 
