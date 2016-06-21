@@ -113,7 +113,7 @@ def make_children(m):
             if not hasattr(node, 'keys'):
                 return m.unit( ([], partial) )
 
-            return m.unit( (node.keys, partial) )
+            return m.unit( (list(node.keys), partial) )
         return for_partial
     return children
 children = make_children(List)

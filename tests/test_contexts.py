@@ -29,7 +29,7 @@ class ContextTestCase(TestCase):
 
         result = run_policy(policy)
 
-        self.assertEquals(result['foo'], 5)
+        self.assertEqual(result['foo'], 5)
 
     def test_append_function(self):
         ctx = Context()
@@ -45,7 +45,7 @@ class ContextTestCase(TestCase):
         policy = ctx.finalize()
 
         result = run_policy(policy)
-        self.assertEquals(result['foo'], 5)
+        self.assertEqual(result['foo'], 5)
 
     def test_subctx_policy(self):
         ctx = Context()
@@ -59,7 +59,7 @@ class ContextTestCase(TestCase):
         )
 
         result = run_policy(ctx.finalize())
-        self.assertEquals(result['foo'], 5)
+        self.assertEqual(result['foo'], 5)
 
     def test_subctx_noop_policy(self):
         ctx = Context()
@@ -78,10 +78,10 @@ class ContextTestCase(TestCase):
         # ctx therefore should only have 1 policy, the `with_foo`
         # function above that just sets {foo: *, bar: foo}
         items = ctx.get_finalized_items()
-        self.assertEquals(len(items), 1)
+        self.assertEqual(len(items), 1)
 
         result = run_policy(ctx.finalize(), {"foo": "zebra"})
-        self.assertEquals(result['bar'], "zebra")
+        self.assertEqual(result['bar'], "zebra")
 
     def test_require_resource_id(self):
         ctx = Context()
@@ -93,13 +93,13 @@ class ContextTestCase(TestCase):
 
         error = result["errors"][0]
 
-        self.assertEquals(error["scope"], "/receiver/resource_id")
-        self.assertEquals(error["value"], None)
-        self.assertEquals(len(error["context"]), 2)
+        self.assertEqual(error["scope"], "/receiver/resource_id")
+        self.assertEqual(error["value"], None)
+        self.assertEqual(len(error["context"]), 2)
 
         expected_context_names = ["resource_id", "require"]
         actual_context_names = [frame.name for frame in error["context"]]
-        self.assertEquals(expected_context_names, actual_context_names)
+        self.assertEqual(expected_context_names, actual_context_names)
 
         policy_asts = [frame.policy_ast for frame in error["context"]]
 
@@ -147,10 +147,10 @@ class ContextTestCase(TestCase):
 
         errors = result["errors"]
 
-        self.assertEquals(len(errors), 1)
+        self.assertEqual(len(errors), 1)
         error = errors[0]
-        self.assertEquals(error["scope"], "/dict/b")
-        self.assertEquals(error["message"], "Value is required.")
+        self.assertEqual(error["scope"], "/dict/b")
+        self.assertEqual(error["message"], "Value is required.")
 
     def test_finalize(self):
         ctx = Context(name="root")
@@ -165,7 +165,7 @@ class ContextTestCase(TestCase):
         completed = incomplete.complete({a.value: 5})
         self.assertIsInstance(completed, PolicyRule)
         result = run_policy(completed)
-        self.assertEquals(result['b'], 5)
+        self.assertEqual(result['b'], 5)
 
     def test_finalize_own_ctx_value(self):
         ctx = Context(name="root")
@@ -177,13 +177,13 @@ class ContextTestCase(TestCase):
         self.assertIsInstance(completed, PolicyRule)
 
         result = run_policy(completed, {"b": 5})
-        self.assertEquals(result['b'], 5)
+        self.assertEqual(result['b'], 5)
 
         completed = ctx.finalize()
         self.assertIsInstance(completed, PolicyRule)
 
         result = run_policy(completed, {"b": 5})
-        self.assertEquals(result['b'], 5)
+        self.assertEqual(result['b'], 5)
 
     def test_finalize_two_ctx_values(self):
         ctx = Context(name="root")
@@ -204,7 +204,7 @@ class ContextTestCase(TestCase):
         self.assertIsInstance(completed, PolicyRule)
 
         result = run_policy(completed)
-        self.assertEquals(result['c'], 7)
+        self.assertEqual(result['c'], 7)
 
         # now instead of starting with `c` and supplying 2 values,
         # let's start with `b` and only have to supply one value.
@@ -217,7 +217,7 @@ class ContextTestCase(TestCase):
         self.assertIsInstance(completed, PolicyRule)
 
         result = run_policy(completed, {"b": 2})
-        self.assertEquals(result['c'], 7)
+        self.assertEqual(result['c'], 7)
 
     def test_incomplete_hookup(self):
         ctx = Context(name="root")
@@ -228,12 +228,12 @@ class ContextTestCase(TestCase):
         complete = a.finalize()
         self.assertIsInstance(complete, PolicyRule)
         result = run_policy(complete, {"a": 5})
-        self.assertEquals(result['b'], 5)
+        self.assertEqual(result['b'], 5)
 
         complete = ctx.finalize()
         self.assertIsInstance(complete, PolicyRule)
         result = run_policy(complete, {"a": 5})
-        self.assertEquals(result['b'], 5)
+        self.assertEqual(result['b'], 5)
 
     def test_incomplete_hookup_skipping(self):
         ctx = Context(name="root")
@@ -245,12 +245,12 @@ class ContextTestCase(TestCase):
         complete = a.finalize()
         self.assertIsInstance(complete, PolicyRule)
         result = run_policy(complete, {"a": 5})
-        self.assertEquals(result['c'], 5)
+        self.assertEqual(result['c'], 5)
 
         complete = ctx.finalize()
         self.assertIsInstance(complete, PolicyRule)
         result = run_policy(complete, {"a": 5})
-        self.assertEquals(result['c'], 5)
+        self.assertEqual(result['c'], 5)
 
     def test_nesting(self):
         ctx = Context(name="root")
@@ -293,10 +293,10 @@ class ContextTestCase(TestCase):
         f_ab = result['results']['f_ab']
         f_ac = result['results']['f_ac']
 
-        self.assertEquals(f_a, a)
-        self.assertEquals(f_b, b)
-        self.assertEquals(f_ab, a+b)
-        self.assertEquals(f_ac, a+c)
+        self.assertEqual(f_a, a)
+        self.assertEqual(f_b, b)
+        self.assertEqual(f_ab, a+b)
+        self.assertEqual(f_ac, a+c)
 
     def test_append_mixed(self):
         ctx = Context(name="root")
@@ -310,7 +310,7 @@ class ContextTestCase(TestCase):
         b.append(with_values, a.value, unit(2))
 
         result = run_policy(ctx.finalize(), {"a": 5})
-        self.assertEquals(result['b'], 7)
+        self.assertEqual(result['b'], 7)
 
     def test_apply(self):
         ctx = Context(name="root")
@@ -326,7 +326,7 @@ class ContextTestCase(TestCase):
         applied_ctx.set_value(applied_ctx.value)
 
         result = run_policy(ctx.finalize(), {"a": 5})
-        self.assertEquals(result['b'], 6)
+        self.assertEqual(result['b'], 6)
 
         # and just for calisthenics, do it in a different order
         ctx = Context(name="root")
@@ -336,7 +336,7 @@ class ContextTestCase(TestCase):
         b.set_value(applied_ctx.value)
 
         result = run_policy(ctx.finalize(), {"a": -3})
-        self.assertEquals(result['b'], -2)
+        self.assertEqual(result['b'], -2)
 
     def test_apply_alchemy(self):
         # for our test today, we will be doing some basic alchemy

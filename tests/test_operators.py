@@ -353,12 +353,12 @@ class PolicyBuilderTestCase(TestCase):
         self.assertEqual([5], values)
 
     def test_regarding_scoping(self):
-        assertEquals = self.assertEquals
+        assertEqual = self.assertEqual
         @policy_rule_func(List)
         def expect_scope(expected="/", msg=None):
             def for_actual(actual):
                 def checker():
-                    return assertEquals(actual, expected, msg)
+                    return assertEqual(actual, expected, msg)
                 return check(checker)
 
             return scope() >> for_actual
@@ -412,14 +412,13 @@ class PolicyBuilderTestCase(TestCase):
         results = ps.getValue()
         roots = [r[1].root for r in results]
 
-        self.assertEquals(len(roots), 1)
+        self.assertEqual(len(roots), 1)
         root = roots[0]
         self.assertIsInstance(root, dict)
 
-        values = root.values()
-        values.sort()
+        values = sorted(root.values())
 
-        self.assertEquals(values, [1,2,3])
+        self.assertEqual(values, [1,2,3])
 
     def test_each_list(self):
         def increment(value):
@@ -431,11 +430,11 @@ class PolicyBuilderTestCase(TestCase):
         results = ps.getValue()
         roots = [r[1].root for r in results]
 
-        self.assertEquals(len(roots), 1)
+        self.assertEqual(len(roots), 1)
         values = roots[0]
         self.assertIsInstance(values, list)
 
-        self.assertEquals(values, [3,6,2])
+        self.assertEqual(values, [3,6,2])
 
     def test_each_ref(self):
         ref_obj = {"a": 7, "b": 3, "c": -1}
@@ -446,11 +445,11 @@ class PolicyBuilderTestCase(TestCase):
         results = ps.getValue()
         roots = [r[1].root for r in results]
 
-        self.assertEquals(len(roots), 1)
+        self.assertEqual(len(roots), 1)
         root = roots[0]
         self.assertIsInstance(root, dict)
 
-        self.assertEquals(root, ref_obj)
+        self.assertEqual(root, ref_obj)
 
 
 if __name__ == '__main__':

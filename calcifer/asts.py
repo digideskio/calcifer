@@ -20,6 +20,9 @@ def get_call_repr(func_name, *args, **kwargs):
 class Node:
     __metaclass__ = ABCMeta
 
+    def __new__(cls, *operands):
+        return super(Node, cls).__new__(cls)
+
     def __deepcopy__(self, memo):
         return copy.copy(self)
 

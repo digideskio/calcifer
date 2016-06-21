@@ -24,7 +24,7 @@ class PolicyProviderTestCase(TestCase):
         self.assertIsInstance(a_policy, HasPolicy.Policy)
 
         results = a_policy.run({"sender": "someone"})
-        self.assertEquals(len(results), 1)
+        self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], Partial)
 
     def test_resolve(self):
@@ -43,7 +43,7 @@ class PolicyProviderTestCase(TestCase):
             "sender": "someone",
             "somenode": "bajillion"
         })
-        self.assertEquals(results[0], "bajillion")
+        self.assertEqual(results[0], "bajillion")
 
     def test_includes(self):
         class HasPolicy(object):
@@ -70,7 +70,7 @@ class PolicyProviderTestCase(TestCase):
         results = a_policy.run({
             "list": []
         })
-        self.assertEquals(results[0], [1,2,3])
+        self.assertEqual(results[0], [1,2,3])
 
 
 if __name__ == '__main__':
