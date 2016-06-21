@@ -21,6 +21,7 @@ setup(
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
     install_requires=read_requirements_file('requirements.txt'),
     tests_require=read_requirements_file('test-requirements.txt'),
+    test_suite='nose.collector',
     author='DramaFever',
     author_email='admin@dramafever.com',
     url='https://github.com/DramaFever/calcifer',
