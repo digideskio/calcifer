@@ -25,7 +25,11 @@ def make_unit(m):
     @policy_rule_func(m)
     def unit(value):
         """
+        unit(value)
+
         Returns a value inside the monad
+
+        :param value: the value returned inside the PolicyRule monad
         """
         def for_partial(partial):
             return m.unit((value, partial))
@@ -40,6 +44,11 @@ def make_unit_value(m):
         """
         Given a node (often returned as monadic result), return
         the value for the node.
+
+        :param node: the node whose value is to be returned inside the
+            PolicyRule monad
+        :type node: Node _v_
+        :returns:    PolicyRule _v_
         """
         def for_partial(partial):
             if hasattr(node, 'value'):
@@ -55,8 +64,14 @@ def make_set_value(m):
     @policy_rule_func(m)
     def set_value(value):
         """
+        set_value(value)
+
         Sets the value for the currently scoped policy node. Overwrites
         the node with a LeafPolicyNode
+
+        :param value: new value
+        :type value: *v*
+        :returns: PolicyRule *v*
         """
         def for_partial(partial):
             return m.unit(partial.set_value(value))
@@ -67,10 +82,22 @@ set_value = make_set_value(List)
 
 def make_select(m):
     @policy_rule_func(m)
-    def select(selector, set_path=False):
+    def select(scope, set_path=False):
         """
+        select(scope, set_path=False)
+
         Retrieves the policy node at a given selector and optionally
-        sets the scope to that selector
+        sets the scope to that selector. Recursively defines UnknownPolicyNodes
+        in the partial.
+
+        :param scope: Scope to select
+
+        :keyword set_path: Sets the scope
+        :type set_path: bool
+
+        :type scope: jsonpointer
+
+        :returns: PolicyRule (Node *v*)
         """
         def for_partial(partial):
             return m.unit(partial.select(selector, set_path=set_path))
@@ -83,7 +110,11 @@ def make_scope(m):
     @policy_rule_func(m)
     def scope():
         """
-        Retrieves the selector for the current scope
+        scope()
+
+        Returns the current scope for the partial
+
+        :returns: PolicyRule *jsonpointer*
         """
         def for_partial(partial):
             return m.unit( (partial.scope, partial) )
@@ -96,7 +127,11 @@ def make_get_node(m):
     @policy_rule_func(m)
     def get_node():
         """
-        Retrieves the node at the current pointer
+        get_node()
+
+        Retrieves the node at the current scope
+
+        :returns: PolicyRule (Node *v*)
         """
         def for_partial(partial):
             return m.unit( partial.select("") )
@@ -108,6 +143,13 @@ get_node = make_get_node(List)
 def make_children(m):
     @policy_rule_func(m)
     def children():
+        """
+        children()
+
+        For DictPolicyNodes, returns all scopes that are direct children.
+
+        :returns: PolicyRule [scope]
+        """
         def for_partial(partial):
             node, _ = partial.select("")
             if not hasattr(node, 'keys'):
@@ -126,7 +168,12 @@ def make_get_value(m):
     @policy_rule_func(m)
     def get_value():
         """
-        Retrieves the value for the node at the current pointer
+        get_value()
+
+        Retrieves the value for the node at the current pointer. Equivalent to
+        `get_node() >> unit_value`
+
+        :returns: PolicyRule *v*
         """
         return get_node() >> unit_value
     return get_value
@@ -140,8 +187,12 @@ def make_append_value(m):
     @policy_rule_func(m)
     def append_value(value):
         """
+        append_value(value)
+
         Gets the value at the current node, and, assuming it to be a list,
         appends `value`
+
+        :param value: value to append
         """
         def append_to(collection):
             if isinstance(collection, list):
@@ -160,18 +211,23 @@ append_value = make_append_value(List)
 
 def make_define_as(m):
     @policy_rule_func(m)
-    def define_as(field):
+    def define_as(node):
         """
-        Sets the path for the current scope
+        define_as(node)
+
+        Define the node at the current scope
+
+        :param node: Node *v*
+        :returns: PolicyRule (Node *v*)
         """
         def for_partial(partial):
             if (
-                    not hasattr(field, 'match') and
-                    hasattr(field, 'definition')
+                    not hasattr(node, 'match') and
+                    hasattr(node, 'definition')
             ):
-                definition = field.definition
+                definition = node.definition
             else:
-                definition = field
+                definition = node
 
             new_definition, new_partial = partial.define_as(definition)
             if new_definition is None:

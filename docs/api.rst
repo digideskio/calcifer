@@ -6,29 +6,52 @@ API
 
 .. automodule:: calcifer.operators
 
-   .. autofunction:: attempt
-   .. autofunction:: append_value
-   .. autofunction:: check
-   .. autofunction:: children
-   .. autofunction:: collect
-   .. autofunction:: define_as
-   .. autofunction:: each
-   .. autofunction:: fail
-   .. autofunction:: forbid_value
-   .. autofunction:: get_node
-   .. autofunction:: get_value
-   .. autofunction:: match
-   .. autofunction:: permit_values
-   .. autofunction:: policies
-   .. autofunction:: pop_context
-   .. autofunction:: push_context
-   .. autofunction:: regarding
-   .. autofunction:: require_value
+   Partial Operators
+   =================
+
    .. autofunction:: scope
    .. autofunction:: select
+   .. autofunction:: get_node
+   .. autofunction:: define_as
+   .. autofunction:: get_value
    .. autofunction:: set_value
-   .. autofunction:: trace
+   .. autofunction:: append_value
+   .. autofunction:: children
+
+
+   Control-flow Operators
+   ======================
+
    .. autofunction:: unit
    .. autofunction:: unit_value
+   .. autofunction:: collect
+   .. autofunction:: policies
+   .. autofunction:: regarding
+   .. autofunction:: check
+   .. autofunction:: each
+
+
+   Non-Determinism
+   ===============
+
+   .. autofunction:: match
+   .. autofunction:: require_value
+   .. autofunction:: forbid_value
+   .. autofunction:: permit_values
+   .. autofunction:: fail
+
+
+   Error-Handling
+   ==============
+
+   .. autofunction:: attempt
+   .. autofunction:: trace
    .. autofunction:: unless_errors
+
+
+   Context Annotation
+   ==================
+
+   .. autofunction:: push_context
+   .. autofunction:: pop_context
    .. autofunction:: wrap_context
