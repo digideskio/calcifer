@@ -24,7 +24,12 @@ into a first-class value. This allows for rich error handling, by being aware
 of specific points of policy failure and allowing annotated policy rules
 to control the formatting of their own errors.
 
-
+This library was written to facilitate the development of a hypermedia
+subscription management API. This library's design is informed by that API's
+goals of business logic cohesion and adaptability to changing policy rules.
+A major goal for that project has been to alleviate client integrations of
+their need to perform any policy determination locally; calcifer has stemmed
+largely from this effort.
 
 
 Installation
