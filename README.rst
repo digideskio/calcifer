@@ -5,6 +5,27 @@ calcifer
 
 A Python based policy framework.
 
+**calcifer** is designed to provide interfaces for describing the evaluation
+and processing of nested higher-order data structures by nested definitions of
+policy rules.
+
+Policies may be used to evaluate some source object both for validation, and to
+generate template descriptions of a "complete" version of that object. This
+evaluation is done at runtime and can hook into arbitrary functions, e.g.
+for choosing policies based on some current system state. (Hypermedia style)
+
+Policies may be defined with implicit non-determinism, allowing the
+specification of multiple policy choices with minimal boilerplate for handling
+the aggregation of results. (PROLOG style)
+
+calcifer also provides a system by which application-layer code can annotate
+specific policy rules, making the point-in-time context of a policy computation
+into a first-class value. This allows for rich error handling, by being aware
+of specific points of policy failure and allowing annotated policy rules
+to control the formatting of their own errors.
+
+
+
 
 Installation
 ------------
