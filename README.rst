@@ -3,8 +3,6 @@ calcifer
 
 |Version| |Downloads| |Status| |Coverage| |License|
 
-A Python based policy framework.
-
 **calcifer** is designed to provide interfaces for describing the evaluation
 and processing of nested higher-order data structures by nested definitions of
 policy rules.
