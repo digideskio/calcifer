@@ -1,4 +1,4 @@
-.. include:: ../readme.rst
+.. include:: ../README.rst
 
 Documentation
 -------------
@@ -7,7 +7,8 @@ Documentation
    :hidden:
    :maxdepth: 2
 
-   api
+   concepts
+   api/index
    history
    contributing
 
