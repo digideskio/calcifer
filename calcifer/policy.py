@@ -98,3 +98,8 @@ class BasePolicy(object):
                 policy.args = self.args
                 ctx.append(policy.context.finalize())
         return ctx
+
+
+class DefaultPolicy(BasePolicy):
+    def resolve(self, final):
+        return {k:v for k,v in final.root.items() if k != 'context'}
