@@ -199,6 +199,8 @@ def make_append_value(m):
                 return collection + [value]
             elif isinstance(collection, (set, frozenset)):
                 return collection | frozenset([value])
+            elif collection is None:
+                return [value]
             else:
                 raise NotImplementedError
 
