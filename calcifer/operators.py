@@ -26,8 +26,6 @@ def make_unit(m):
     @policy_rule_func(m)
     def unit(value):
         """
-        unit(value)
-
         Returns a value inside the monad
 
         :param value: the value returned inside the PolicyRule monad
@@ -65,8 +63,6 @@ def make_set_value(m):
     @policy_rule_func(m)
     def set_value(value):
         """
-        set_value(value)
-
         Sets the value for the currently scoped policy node. Overwrites
         the node with a LeafPolicyNode
 
@@ -85,8 +81,6 @@ def make_select(m):
     @policy_rule_func(m)
     def select(scope, set_path=False):
         """
-        select(scope, set_path=False)
-
         Retrieves the policy node at a given selector and optionally
         sets the scope to that selector. Recursively defines UnknownPolicyNodes
         in the partial.
@@ -111,8 +105,6 @@ def make_scope(m):
     @policy_rule_func(m)
     def scope():
         """
-        scope()
-
         Returns the current scope for the partial
 
         :returns: PolicyRule *jsonpointer*
@@ -128,8 +120,6 @@ def make_get_node(m):
     @policy_rule_func(m)
     def get_node():
         """
-        get_node()
-
         Retrieves the node at the current scope
 
         :returns: PolicyRule (Node *v*)
@@ -145,8 +135,6 @@ def make_children(m):
     @policy_rule_func(m)
     def children():
         """
-        children()
-
         For DictPolicyNodes, returns all scopes that are direct children.
 
         :returns: PolicyRule [scope]
@@ -169,8 +157,6 @@ def make_get_value(m):
     @policy_rule_func(m)
     def get_value():
         """
-        get_value()
-
         Retrieves the value for the node at the current pointer. Equivalent to
         `get_node() >> unit_value`
 
@@ -234,8 +220,6 @@ def make_define_as(m):
     @policy_rule_func(m)
     def define_as(node):
         """
-        define_as(node)
-
         Define the node at the current scope
 
         :param node: Node *v*
@@ -363,9 +347,10 @@ def make_regarding(m):
         """
         Given a selector and a list of functions that generate policy rules,
         returns a single policy rule that, for each rule function:
-            1. sets the scope to the selector / retrieves the node there
-            3. passes the node to the rule_func to generate a policy rule
-            4. applies the policy rule at the new scope
+
+        1. sets the scope to the selector / retrieves the node there
+        3. passes the node to the rule_func to generate a policy rule
+        4. applies the policy rule at the new scope
 
         In addition, regarding checks the current scope and restores it when
         it's done.
@@ -589,9 +574,10 @@ def make_require_value(m):
         """
         Returns an mzero (empty list, e.g.) if the provided node
         is missing a value
-        For instance:
-            select("/does/not/exist") >> require_value
-        returns []
+
+        :Examples:
+        >>> select("/does/not/exist") >> require_value
+        []
         """
         def for_partial(partial):
             logger.debug("require_value %r", node)
