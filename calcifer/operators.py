@@ -100,7 +100,7 @@ def make_select(m):
         :returns: PolicyRule (Node *v*)
         """
         def for_partial(partial):
-            return m.unit(partial.select(selector, set_path=set_path))
+            return m.unit(partial.select(scope, set_path=set_path))
         return for_partial
     return select
 select = make_select(List)
