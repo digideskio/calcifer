@@ -11,10 +11,12 @@ project = 'calcifer'
 copyright = '{0.year}, Dramafever'.format(datetime.datetime.now())
 version = release = __version__
 
-needs_sphinx = '1.0'
+needs_sphinx = '1.1'
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
+    'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
 ]
@@ -26,6 +28,7 @@ master_doc = 'index'
 pygments_style = 'sphinx'
 html_static_path = []
 exclude_patterns = []
+graphviz_output_format = 'svg'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme  # pylint: disable=C0413

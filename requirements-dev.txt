@@ -5,4 +5,5 @@ detox
 coverage
 Sphinx
 sphinx-rtd-theme
+sphinx-autobuild
 tox
