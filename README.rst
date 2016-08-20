@@ -1,9 +1,9 @@
-calcifer
+Calcifer
 ========
 
 |Version| |Downloads| |Status| |Coverage| |License|
 
-**calcifer** is designed to provide interfaces for describing the evaluation
+**Calcifer** is designed to provide interfaces for describing the evaluation
 and processing of nested higher-order data structures by nested definitions of
 policy rules.
 
@@ -14,9 +14,9 @@ for choosing policies based on some current system state. (Hypermedia style)
 
 Policies may be defined with implicit non-determinism, allowing the
 specification of multiple policy choices with minimal boilerplate for handling
-the aggregation of results. (PROLOG style)
+the aggregation of results. (Prolog style)
 
-calcifer also provides a system by which application-layer code can annotate
+Calcifer also provides a system by which application-layer code can annotate
 specific policy rules, making the point-in-time context of a policy computation
 into a first-class value. This allows for rich error handling, by being aware
 of specific points of policy failure and allowing annotated policy rules
@@ -26,7 +26,7 @@ This library was written to facilitate the development of a hypermedia
 subscription management API. This library's design is informed by that API's
 goals of business logic cohesion and adaptability to changing policy rules.
 A major goal for that project has been to alleviate client integrations of
-their need to perform any policy determination locally; calcifer has stemmed
+their need to perform any policy determination locally; Calcifer has stemmed
 largely from this effort.
 
 
@@ -38,9 +38,6 @@ Installation
     pip install calcifer
 
 
-.. include:: contributing.rst
-
-
 Development
 -----------
 
@@ -49,6 +46,7 @@ Development
 3. Run tests  ``nosetests``
 4. `detox`_ is installed and will run the test suite across all supported python platforms
 5. `python setup.py build_sphinx` will generate documentation into *build/sphinx/html*
+
 
 TL;DR
 +++++
