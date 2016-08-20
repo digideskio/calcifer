@@ -45,6 +45,7 @@ from calcifer.monads import (
     PolicyRule, PolicyRuleFunc
 )
 from calcifer.policy import BasePolicy
+from calcifer.policy import DefaultPolicy as Policy
 
 
 version_info = (0, 0, 0)
