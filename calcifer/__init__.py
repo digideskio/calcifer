@@ -26,6 +26,7 @@ from calcifer.operators import (
     match,
     permit_values,
     policies,
+    pop_value,
     pop_context,
     push_context,
     regarding,

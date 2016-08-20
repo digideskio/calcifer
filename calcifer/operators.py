@@ -4,6 +4,7 @@ Premium Command Policy StateT Operators.
 These are provided as building blocks for specifying Premium Command Policies
 for the purposes of template generation and command validation.
 """
+import copy
 import logging
 from pymonad import List
 
@@ -187,10 +188,8 @@ def make_append_value(m):
     @policy_rule_func(m)
     def append_value(value):
         """
-        append_value(value)
-
-        Gets the value at the current node, and, assuming it to be a list,
-        appends `value`
+        Gets the value at the current node and appends `value`.
+        The current node value should be either a set or a list, or undefined.
 
         :param value: value to append
         """
@@ -209,6 +208,26 @@ def make_append_value(m):
         )
     return append_value
 append_value = make_append_value(List)
+
+def make_pop_value(m):
+    get_value = make_get_value(m)
+    set_value = make_set_value(m)
+
+    @policy_rule_func(m)
+    def pop_value():
+        """
+        Gets the value at the current node, and pops an element.
+        """
+        def popped(collection):
+            collection = copy.deepcopy(collection)
+            if not hasattr(collection, 'pop'):
+                raise NotImplementedError
+
+            collection.pop()
+            return collection
+        return get_value() >> (lambda collection: set_value(popped(collection)))
+    return pop_value
+pop_value = make_pop_value(List)
 
 
 def make_define_as(m):
@@ -523,14 +542,14 @@ attempt = make_attempt(List)
 #
 
 def make_push_context(m):
+    append_value = make_append_value(m)
+
     @policy_rule_func(m)
     def push_context(context):
         """
         Add an additional context to the stack for the partial
         """
-        def for_partial(partial):
-            return m.unit( partial.push_context(context) )
-        return for_partial
+        return regarding("/context", append_value(context))
     return push_context
 push_context = make_push_context(List)
 
@@ -542,11 +561,7 @@ def make_pop_context(m):
         Pop the partial's context stack, returning whatever
         value it was called with.
         """
-        def for_partial(partial):
-            _, new_partial = partial.pop_context()
-
-            return m.unit( (passthru, new_partial) )
-        return for_partial
+        return regarding("/context", pop_value())
     return pop_context
 pop_context = make_pop_context(List)
 
