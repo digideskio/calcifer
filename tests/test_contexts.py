@@ -83,21 +83,35 @@ class ContextTestCase(TestCase):
         result = run_policy(ctx.finalize(), {"foo": "zebra"})
         self.assertEqual(result['bar'], "zebra")
 
-    def test_require_resource_id(self):
-        ctx = Context()
-        ctx.require_resource_id()
+    def test_subclass_helpers(self):
+        class ResourceContext(Context):
+            @property
+            def resource(self):
+                return self.scope_subctx("/resource", "resource")
 
-        obj = {"sender": {}, "errors": [], "context": []}
 
-        result = run_policy(ctx.finalize(), obj)
+            def require_resource(self):
+                require_ctx = ctx.resource.require()
+                error_ctx = require_ctx.error_ctx()
+
+                error_ctx.select("message").set_value(
+                    "Resource is required"
+                )
+                error_ctx.select("code").set_value("MISSING_REQUIRED_RESOURCE")
+                return require_ctx
+
+        ctx = ResourceContext()
+        ctx.require_resource()
+
+        result = run_policy(ctx.finalize(), {})
 
         error = result["errors"][0]
 
-        self.assertEqual(error["scope"], "/receiver/resource_id")
+        self.assertEqual(error["scope"], "/resource")
         self.assertEqual(error["value"], None)
         self.assertEqual(len(error["context"]), 2)
 
-        expected_context_names = ["resource_id", "require"]
+        expected_context_names = ["resource", "require"]
         actual_context_names = [frame.name for frame in error["context"]]
         self.assertEqual(expected_context_names, actual_context_names)
 
@@ -108,16 +122,12 @@ class ContextTestCase(TestCase):
 
     def test_whitelist_values(self):
         ctx = Context()
-        ctx.consumer_name.whitelist_values(
+        ctx.select("/client").whitelist_values(
             ["ios", "android"]
         )
 
         obj = {
-            "sender": {
-                "consumer_name": "www"
-            },
-            "errors": [],
-            "context": [],
+            "client": "windows"
         }
         result = run_policy(ctx.finalize(), obj)
 
