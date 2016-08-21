@@ -47,6 +47,4 @@ from calcifer.monads import (
 from calcifer.policy import BasePolicy
 from calcifer.policy import DefaultPolicy as Policy
 
-
-version_info = (0, 0, 0)
-__version__ = '.'.join(str(v) for v in version_info[:3])
+from calcifer._version import __version__
