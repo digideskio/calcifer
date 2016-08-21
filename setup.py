@@ -3,7 +3,7 @@ import codecs
 
 from setuptools import setup, find_packages
 
-from calcifer._version import __version__
+execfile('calcifer/_version.py')
 
 def read_requirements_file(filename):
     """Read pip-formatted requirements from a file."""
