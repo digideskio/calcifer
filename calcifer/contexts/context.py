@@ -24,12 +24,21 @@ class Context(BaseContext):
     Implementation details can be found in BaseContext
     """
     def error_ctx(self):
+        """
+        Retrieves, possibly creating, a specialized error handler
+        policy for the Context
+        """
         if not self.error_handler:
             error_handler_ctx = self.__class__(name="error_handler")
             self.error_handler = error_handler_ctx
         return self.error_handler
 
     def require(self, *args):
+        """
+        Requires that a value is defined and truthy.
+
+        :param value: if not provided, uses value for current node
+        """
         if len(args):
             value = args[0]
         else:
@@ -49,6 +58,9 @@ class Context(BaseContext):
         return subctx
 
     def forbid(self, *args):
+        """
+        Opposite of ``require()`` - errors when value is defined
+        """
         if len(args):
             value = args[0]
         else:
@@ -58,14 +70,25 @@ class Context(BaseContext):
         return subctx
 
     def set_value(self, value):
+        """
+        Sets the value for the current node
+        """
         self.append(set_value, value)
         return self
 
     def append_value(self, value):
+        """
+        Appends value to the current node, assuming the node
+        to be a list if not defined
+        """
         self.append(append_value, value)
         return self
 
     def whitelist_values(self, values):
+        """
+        Forks computation, erring if value is provided already and
+        does not match
+        """
         subctx = self.named_subctx("whitelist_values")
         subctx.append(permit_values, values).or_error()
 
@@ -76,24 +99,50 @@ class Context(BaseContext):
         return subctx
 
     def fail_early(self):
+        """
+        Returns a new context that checks node "/errors" and short-circuits
+        if any errors exist.
+        """
         return self.subctx(
             lambda policy_rules: unless_errors(*policy_rules)
         )
 
     def err(self):
+        """
+        Trigger error handling
+        """
         return self.fail().or_error()
 
     def add_error(self):
+        """
+        Create a blank error
+        """
         self.append(add_error, {})
 
     @property
     def last_error(self):
+        """
+        Returns the context selecting the most recently defined error
+        """
         errors_ctx = self.select("/errors").children()
         idx_ctx = errors_ctx.apply(lambda es: es[-1], errors_ctx.value)
         last_error_ctx = idx_ctx.select(idx_ctx.value)
         return last_error_ctx
 
     def or_error(self):
+        """
+        If context fails, inject error instead.
+        Error has the following properties:
+
+        value
+            Value found at node
+        scope
+            The current scope at the time of error
+
+        context
+            The contextual traceback
+        """
+
         catch_ctx = self.or_catch()
 
         subctx = catch_ctx.subctx()
@@ -148,6 +197,10 @@ class Context(BaseContext):
         return self
 
     def children(self):
+        """
+        Return the context with the list of scopes that are direct children
+        of the current node
+        """
         children_ctx = self.subctx(
             lambda policy_rules: (
                 children() >> collect(*policy_rules)
@@ -156,6 +209,13 @@ class Context(BaseContext):
         return children_ctx
 
     def each(self, **kwargs):
+        """
+        Create and return a context that operates on each child of the
+        current node.
+
+        :kwarg ref: An injectable reference object that has matching children
+            nodes (same structure dict or list)
+        """
         def with_policy_rules(policy_rules):
             def with_true_children(true_children):
                 return each(

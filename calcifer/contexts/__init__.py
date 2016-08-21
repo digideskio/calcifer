@@ -1,7 +1,4 @@
 """
-`calcifer.contexts` module
-``````````````````````````
-
 Overview and Purpose
 ====================
 
@@ -39,8 +36,8 @@ A context object may be used for either or both of the following purposes:
    chained method calls to the context object.
 
  - Or, the context may represent a value that will exist when policy is run
-   on a given request. For instance, `ctx.field("merchant_type")` would
-   represent the value for that field.
+   on a given request. For instance, `ctx.select("merchant_type")` would
+   represent the value for that node.
 
    A context may be used as this deferred value by passing it as an argument
    to any exposed method on any parent context object.
