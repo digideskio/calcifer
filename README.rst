@@ -1,7 +1,7 @@
 Calcifer
 ========
 
-|Version| |Downloads| |Status| |Coverage| |License|
+|Docs| |Version| |Downloads| |Status| |License|
 
 **Calcifer** is designed to provide interfaces for describing the evaluation
 and processing of nested higher-order data structures by nested definitions of
@@ -252,17 +252,19 @@ License
 
 .. _detox: https://testrun.org/tox/
 
+.. |Docs| image:: https://readthedocs.org/projects/calcifer/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://calcifer.readthedocs.io/en/latest/?badge=latest
+
 .. |Version| image:: https://badge.fury.io/py/calcifer.svg?
    :target: http://badge.fury.io/py/calcifer
 
 .. |Status| image:: https://travis-ci.org/DramaFever/calcifer.svg?branch=master
    :target: https://travis-ci.org/DramaFever/calcifer
 
-.. |Coverage| image:: https://img.shields.io/coveralls/DramaFever/calcifer.svg?
-   :target: https://coveralls.io/r/DramaFever/calcifer
+.. |Downloads| image:: https://img.shields.io/pypi/DramaFever/calcifer.svg?maxAge=2592000
+   :target: https://
 
-.. |Downloads| image:: https://pypip.in/d/calcifer/badge.svg?
-   :target: https://pypi.python.org/pypi/calcifer
-
-.. |License| image:: https://pypip.in/license/calcifer/badge.svg?
-   :target: https://calcifer.readthedocs.org
+.. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
+   :target: https://raw.githubusercontent.com/DramaFever/calcifer/master/LICENSE
