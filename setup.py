@@ -3,8 +3,7 @@ import codecs
 
 from setuptools import setup, find_packages
 
-import calcifer
-
+from calcifer._version import __version__
 
 def read_requirements_file(filename):
     """Read pip-formatted requirements from a file."""
@@ -15,7 +14,7 @@ def read_requirements_file(filename):
 setup(
     name='calcifer',
     description='A Python based policy framework.',
-    version=calcifer.__version__,
+    version=__version__,
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
