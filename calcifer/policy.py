@@ -35,8 +35,6 @@ class BasePolicy(object):
         return new_self
 
     defaults = {
-        "errors": [],
-        "context": []
     }
 
     def initial_partial(self, obj=None):
@@ -83,7 +81,7 @@ class BasePolicy(object):
             method_args.append(self.ref)
         method_args += self.args
         self.method(*method_args)
-        if self.parent:
+        if getattr(self, 'parent', None):
             # TODO this is a codesmell
             logger.debug("context name: %s", ctx.ctx_name)
             if ctx.ctx_name == 'endpoint_policy':
@@ -100,3 +98,8 @@ class BasePolicy(object):
                 policy.args = self.args
                 ctx.append(policy.context.finalize())
         return ctx
+
+
+class DefaultPolicy(BasePolicy):
+    def resolve(self, final):
+        return {k:v for k,v in final.root.items() if k != 'context'}

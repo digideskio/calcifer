@@ -2,6 +2,7 @@ from abc import ABCMeta
 import collections
 import copy
 import re
+from six import string_types
 
 def get_call_repr(func_name, *args, **kwargs):
     args_expr = ", ".join([repr(arg) for arg in args])
@@ -28,7 +29,7 @@ class Node:
 
 def flatten(l):
     for el in l:
-        if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+        if isinstance(el, collections.Iterable) and not isinstance(el, string_types):
             for sub in flatten(el):
                 yield sub
         else:

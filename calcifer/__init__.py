@@ -26,6 +26,7 @@ from calcifer.operators import (
     match,
     permit_values,
     policies,
+    pop_value,
     pop_context,
     push_context,
     regarding,
@@ -44,7 +45,6 @@ from calcifer.monads import (
     PolicyRule, PolicyRuleFunc
 )
 from calcifer.policy import BasePolicy
+from calcifer.policy import DefaultPolicy as Policy
 
-
-version_info = (0, 0, 0)
-__version__ = '.'.join(str(v) for v in version_info[:3])
+from calcifer._version import __version__

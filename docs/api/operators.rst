@@ -1,30 +1,28 @@
-API
----
-
-.. automodule:: calcifer
-   :members:
+Low-level Policy Operators
+--------------------------
 
 .. automodule:: calcifer.operators
+   :noindex:
 
    Partial Operators
    =================
 
-   .. autofunction:: scope
-   .. autofunction:: select
-   .. autofunction:: get_node
-   .. autofunction:: define_as
-   .. autofunction:: get_value
-   .. autofunction:: set_value
-   .. autofunction:: append_value
-   .. autofunction:: children
+   .. autofunction:: scope()
+   .. autofunction:: select(scope, set_path=False)
+   .. autofunction:: get_node()
+   .. autofunction:: define_as(node)
+   .. autofunction:: get_value()
+   .. autofunction:: set_value(value)
+   .. autofunction:: append_value(value)
+   .. autofunction:: children()
 
 
    Control-flow Operators
    ======================
 
-   .. autofunction:: unit
-   .. autofunction:: unit_value
-   .. autofunction:: collect
+   .. autofunction:: unit(value)
+   .. autofunction:: unit_value(node)
+   .. autofunction:: collect(*rule_funcs)
    .. autofunction:: policies
    .. autofunction:: regarding
    .. autofunction:: check

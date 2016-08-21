@@ -195,7 +195,7 @@ def policy_rule_func(m, rule_func_name=None):
                     rule_func_name = (
                         '<lambda {}:>'
                     ).format(
-                        ", ".join(inspect.getargspec(rule_func).args)
+                        ", ".join(inspect.getargspec(rule_func).args) # pylint: disable=deprecated-method
                     )
 
                 if rule_func.__doc__:
@@ -227,7 +227,9 @@ def policy_rule_func(m, rule_func_name=None):
             def __repr__(self):
                 return "<PolicyRuleFunc {}>".format(self.rule_func_name)
 
-        return PolicyRuleFunc(rule_func, rule_func_name)
+        rule_func = PolicyRuleFunc(rule_func, rule_func_name)
+        rule_func.__bases__ = ()
+        return rule_func
     return decorator
 
 PolicyRule = BasePolicyRule
