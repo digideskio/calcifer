@@ -135,7 +135,8 @@ def make_children(m):
     @policy_rule_func(m)
     def children():
         """
-        For DictPolicyNodes, returns all scopes that are direct children.
+        For DictPolicyNodes or ListPolicyNodes, returns all scopes that are
+        direct children.
 
         :returns: PolicyRule [scope]
         """

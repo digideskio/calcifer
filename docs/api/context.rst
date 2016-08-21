@@ -8,5 +8,6 @@ Context API
    =======
 
    .. autoclass:: Context
+       :members:
 
 
