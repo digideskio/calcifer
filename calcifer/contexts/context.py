@@ -18,54 +18,16 @@ class Context(BaseContext):
 
     Policies are built by performing stateful operations on Context objects.
 
-    Example usage:
-
-        ctx = Context()
-        ctx.consumer_name.require()
-
-        ctx.field("merchant_type").define_as(MerchantTypeField())
-
-        policy = ctx.finalize()
-
     Method calls/property retrievals modify the Context to potentially
     include additional policy rules, as appropriate.
 
     Implementation details can be found in BaseContext
     """
-    @property
-    def consumer_name(self):
-        return self.scope_subctx("/sender/consumer_name", "consumer_name")
-
-    @property
-    def user_guid(self):
-        return self.scope_subctx("/sender/user_guid", "user_guid")
-
-    @property
-    def resource_id(self):
-        return self.scope_subctx("/receiver/resource_id", "resource_id")
-
     def error_ctx(self):
         if not self.error_handler:
             error_handler_ctx = self.__class__(name="error_handler")
             self.error_handler = error_handler_ctx
         return self.error_handler
-
-    def require_user(self):
-        require_ctx = self.user_guid.require()
-        error_ctx = require_ctx.error_ctx()
-
-        error_ctx.select("message").set_value(
-            "User authentication required."
-        )
-        error_ctx.select("code").set_value("UNAUTHENTICATED")
-        return require_ctx
-
-    def require_resource_id(self):
-        require_ctx = self.resource_id.require()
-        error_ctx = require_ctx.error_ctx()
-        error_ctx.select("message").set_value("Resource id required.")
-        error_ctx.select("code").set_value("NOT FOUND")
-        return require_ctx
 
     def require(self, *args):
         if len(args):
@@ -94,14 +56,6 @@ class Context(BaseContext):
         subctx = self.named_subctx("forbid")
         subctx.append(forbid_value, value).or_error()
         return subctx
-
-    def kwarg(self, kwarg_name):
-        ctx_name = "kwarg({})".format(kwarg_name)
-        return self.scope_item_subctx("/kwargs", kwarg_name, ctx_name)
-
-    @property
-    def kwargs(self):
-        return self.scope_subctx("/kwargs", "kwargs")
 
     def set_value(self, value):
         self.append(set_value, value)
