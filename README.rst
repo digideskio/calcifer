@@ -1,7 +1,7 @@
 Calcifer
 ========
 
-|Docs| |Version| |Downloads| |Status| |License|
+|Docs| |Version| |Status| |License|
 
 **Calcifer** is designed to provide interfaces for describing the evaluation
 and processing of nested higher-order data structures by nested definitions of
@@ -262,9 +262,6 @@ License
 
 .. |Status| image:: https://travis-ci.org/DramaFever/calcifer.svg?branch=master
    :target: https://travis-ci.org/DramaFever/calcifer
-
-.. |Downloads| image:: https://img.shields.io/pypi/DramaFever/calcifer.svg?maxAge=2592000
-   :target: https://
 
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :target: https://raw.githubusercontent.com/DramaFever/calcifer/master/LICENSE
