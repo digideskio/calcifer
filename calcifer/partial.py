@@ -142,4 +142,3 @@ class Partial(object):
 
     def __repr__(self):
         return "Partial(root={}, path={})".format(self._root, self.path)
-

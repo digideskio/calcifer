@@ -12,5 +12,3 @@ def run_policy(policy_rule, obj=None):
     partial = Partial.from_obj(obj)
     _, policy_final = policy_rule.run(partial)[0]
     return policy_final.root
-
-

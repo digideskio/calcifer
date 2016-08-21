@@ -4,4 +4,3 @@ from calcifer.operators import (
 
 def add_error(error):
     return regarding("/errors", append_value(error))
-
