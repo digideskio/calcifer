@@ -195,7 +195,7 @@ def policy_rule_func(m, rule_func_name=None):
                     rule_func_name = (
                         '<lambda {}:>'
                     ).format(
-                        ", ".join(inspect.getargspec(rule_func).args)
+                        ", ".join(inspect.getargspec(rule_func).args) # pylint: disable=deprecated-method
                     )
 
                 if rule_func.__doc__:

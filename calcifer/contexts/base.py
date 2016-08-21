@@ -415,8 +415,8 @@ class BaseContext(object):
             def __init__(self, *true_args):
                 self.true_args = true_args
 
-            def __cmp__(self, other):
-                return cmp(self.true_args, other.true_args)
+            def __lt__(self, other):
+                return self.true_args < other.true_args
 
             def __hash__(self):
                 return make_hash( self.true_args )
