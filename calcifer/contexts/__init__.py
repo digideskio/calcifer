@@ -1,7 +1,4 @@
 """
-Contexts
-````````
-
 Overview and Purpose
 ====================
 
