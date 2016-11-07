@@ -254,17 +254,26 @@ class BaseContext(object):
         Performs all syntactic manipulations to subcontexts and contained
         policy rules and returns a single policy rule aggregate.
         """
-        finalized_items = self.get_finalized_items()
-        wrapped = self.wrap(finalized_items)
+        finalized_items, finalized_error_handler = self.get_finalized_items()
+        wrapped = self.wrap(finalized_items, finalized_error_handler)
 
         return wrapped
 
     def get_finalized_items(self):
-        return [
+        finalized_items = [
             self._finalize_item(item, getattr(self, 'value', None))
             for item in self.items
             if self._warrants_inclusion(item)
         ]
+
+        if not self.error_handler:
+            finalized_error_handler = None
+
+        finalized_error_handler = self._finalize_item(
+            self.error_handler, getattr(self, 'value', None)
+        )
+
+        return finalized_items, finalized_error_handler
 
     @classmethod
     def _finalize_item(cls, item, provided_ctx_value=None):
@@ -296,19 +305,19 @@ class BaseContext(object):
             )
         return item
 
-    def wrap(self, items):
-        def make_action(ctx_wrapper, ctx_name, error_handler, num_ctx_args):
+    def wrap(self, items, error_handler):
+        def make_action(ctx_wrapper, ctx_name, num_ctx_args):
             @functools.wraps(ctx_wrapper)
             def action(items):
-                ctx_args = items[0:num_ctx_args]
-                items = items[num_ctx_args:]
+                error_handler = items[0]
+                ctx_args = items[1:num_ctx_args+1]
+                items = items[num_ctx_args+1:]
                 wrapped = ctx_apply(ctx_wrapper(items), ctx_args)
 
                 if ctx_name:
                     if error_handler:
-                        handler_rule = error_handler.finalize()
                         ctx_frame = ContextFrame(
-                            ctx_name, wrapped.ast, handler_rule
+                            ctx_name, wrapped.ast, error_handler
                         )
                     else:
                         ctx_frame = ContextFrame(
@@ -322,13 +331,12 @@ class BaseContext(object):
         action = make_action(
             self.wrapper,
             self.ctx_name,
-            self.error_handler,
             len(self.ctx_args)
         )
 
         wrapped = wrap_ctx_values(
             action,
-            self.ctx_args + tuple(items)
+            (error_handler,) + self.ctx_args + tuple(items)
         )
         return wrapped
 
