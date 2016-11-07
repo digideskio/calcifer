@@ -4,55 +4,60 @@ import logging
 
 from calcifer.operators import (
     wrap_context, attempt, trace, collect, unit, policies, regarding,
-    fail,
+    fail, args_receiver,
 )
 from calcifer.monads import (
-    PolicyRule, PolicyRuleFunc, get_call_repr
+    PolicyRule, PolicyRuleFunc, get_call_repr,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def ctx_apply(f, got, remaining):
+def ctx_apply(f, ctx_args):
     """
     Creates a promise to call `f` with some values corresponding to
-    the contextual values (or regular values) in `remaining`, accumulating
-    the true values in `got`.
-
-    `f` is then called when remaining is empty, and got is full.
+    the contextual values (or regular values) in `ctx_args`
     """
-    # base case:
-    if not remaining:
-        if got:
-            return f(*got)
+    if not ctx_args:
         return f
 
-    # recursive step:
-    first, rest = remaining[0], remaining[1:]
+    values = []
+    missing = set([])
+    for idx, arg in enumerate(ctx_args):
+        if hasattr(arg, 'finalize'):
+            arg = arg.finalize()
 
-    # so, depending on how exactly `first` is not a value:
-    if hasattr(first, 'finalize'):
-        # if it's a subcontext, finalize it to a policy rule,
-        # then add the policy rule back to `remaining` and recurse
-        value = first.finalize()
-        return ctx_apply(f, got, (value,)+rest)
+        if hasattr(arg, 'bind'):
+            values.append(None)
+            missing.add( (idx, arg) )
+            continue
 
-    if hasattr(first, 'bind'):
-        # if it's a policy rule, we're going to have to wait until
-        # the policy monad evaluates. so we bind the policy rule to
-        # a function that moves the value over to `got` and recurses
-        # there.
-        #
-        # (one might notice that Context never really accesses
-        # the value... by the time a request comes in and policy is
-        # evaluated, the underlying Context object will long have since
-        # been finalized() and possibly even GC'd. Context only does
-        # syntactic policy rule manipulation.)
-        return first >> (lambda value:
-                         ctx_apply(f, got+[value], rest))
+        values.append(arg)
 
-    # a regular, plain-ol' value!? bam. lists.
-    return ctx_apply(f, got+[first], rest)
+    if not missing:
+        return f(*values)
+
+    receive = args_receiver(values)
+
+    apply_rule = None
+    for idx, policy_rule in missing:
+        step = receive(idx, policy_rule)
+
+        if apply_rule is None:
+            apply_rule = step
+        else:
+            apply_rule = apply_rule >> step
+
+    if hasattr(f, 'rule_func'):
+        wrapped_func = f.rule_func
+    else:
+        wrapped_func = f
+
+    @functools.wraps(wrapped_func)
+    def finish(_):
+        return f(*values)
+
+    return apply_rule >> finish
 
 
 def wrap_ctx_values(action, args):
@@ -238,7 +243,7 @@ class BaseContext(object):
         else:
             self.items.append(
                 wrap_ctx_values(
-                    lambda args: ctx_apply(item, [], args),
+                    lambda args: ctx_apply(item, args),
                     args
                 )
             )
@@ -297,7 +302,7 @@ class BaseContext(object):
             def action(items):
                 ctx_args = items[0:num_ctx_args]
                 items = items[num_ctx_args:]
-                wrapped = ctx_apply(ctx_wrapper(items), [], ctx_args)
+                wrapped = ctx_apply(ctx_wrapper(items), ctx_args)
 
                 if ctx_name:
                     if error_handler:
