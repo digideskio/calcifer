@@ -3,7 +3,7 @@ import functools
 import logging
 
 from calcifer.operators import (
-    wrap_context, attempt, trace, collect, unit, policies, regarding,
+    wrap_context, catch_attempt, trace, collect, unit, policies, regarding,
     fail, args_receiver,
 )
 from calcifer.monads import (
@@ -367,12 +367,7 @@ class BaseContext(object):
 
     def attempt_catch(self):
         def attempt_wrapper(policy_rules):
-            catch_rule = policy_rules[0]
-            policy_rules = policy_rules[1:]
-            return attempt(
-                *policy_rules,
-                catch=catch_rule
-            )
+            return catch_attempt(policy_rules[0], *policy_rules[1:])
 
         attempt_ctx = self.subctx(attempt_wrapper)
         catch = attempt_ctx.trace(attempt_ctx.value)
