@@ -394,6 +394,7 @@ class BaseContext(object):
 
     def apply(self, func, *args):
         def apply_for_policy_rules(policy_rules):
+            @functools.wraps(func)
             def apply_for_true_args(*true_args):
                 return collect(*policy_rules)(func(*true_args))
             return apply_for_true_args
@@ -421,6 +422,9 @@ class BaseContext(object):
             def __hash__(self):
                 return make_hash( self.true_args )
 
+            def __eq__(self, other):
+                return self.true_args == other.true_args
+
             def __repr__(self):
                 return "<MemoKey {}>".format(
                     get_call_repr(*self.true_args)
@@ -446,6 +450,7 @@ class BaseContext(object):
     def check(self, func, *func_args):
         def make_check_wrapper(func):
             def check_wrapper(policy_rules):
+                @functools.wraps(func)
                 def eval_wrapper(*true_func_args):
                     func_result = func(*true_func_args)
                     if func_result:
