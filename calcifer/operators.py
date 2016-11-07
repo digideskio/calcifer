@@ -711,3 +711,18 @@ def make_trace(m):
         return op
     return trace
 trace = make_trace(List)
+
+
+def make_args_receiver(m):
+    unit = make_unit(m)
+
+    def args_receiver(values):
+        @policy_rule_func(m)
+        def receive(idx, policy_rule):
+            def save(value):
+                values[idx] = value
+                return unit(None)
+            return policy_rule >> save
+        return receive
+    return args_receiver
+args_receiver = make_args_receiver(List)
