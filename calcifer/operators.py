@@ -206,7 +206,7 @@ def make_pop_value(m):
         Gets the value at the current node, and pops an element.
         """
         def popped(collection):
-            collection = copy.deepcopy(collection)
+            collection = copy.copy(collection)
             if not hasattr(collection, 'pop'):
                 raise NotImplementedError
 
@@ -493,15 +493,12 @@ def make_attempt(m):
     unit = make_unit(m)
     collect = make_collect(m)
 
-    def attempt(*rules, **kwargs):
+    def attempt(*rules):
         """
         Keeping track of the value and partial it receives,
         if the result of *rules on the partial is mzero,
         then `attempt` returns `unit( (initial_value, initial_policy) )`
         otherwise, `attempt` returns the result of the rules.
-
-        Accepts a policy rule function as kwarg `catch=` which can be
-        applied instead of simply "not failing"
         """
         def for_value(value):
             def for_partial(initial_partial):
@@ -509,18 +506,44 @@ def make_attempt(m):
                 result = op.run(initial_partial)
 
                 if result == mzero():
-                    if 'catch' in kwargs:
-                        alternative = (unit(value) >> kwargs['catch']).run(
-                            initial_partial
-                        )
-                        return alternative
                     return m.unit( (value, initial_partial) )
                 return result
             return for_partial
-        attempt_rule_func_name = get_call_repr("attempt", *rules, **kwargs)
+        attempt_rule_func_name = get_call_repr("attempt", *rules)
         return policy_rule_func(m, attempt_rule_func_name)(for_value)
     return attempt
 attempt = make_attempt(List)
+
+
+def make_catch_attempt(m):
+    mzero = m.mzero
+    unit = make_unit(m)
+    collect = make_collect(m)
+
+    def catch_attempt(catch_rule, *rules):
+        """
+        Like `attempt`, `catch_attempt` runs a list of policy rule[_func]s,
+        but instead of performing no-op on monadic failure, instead runs
+        an alternative `catch_rule`
+        """
+        def for_value(value):
+            def for_partial(initial_partial):
+                op = unit(value) >> collect(*rules)
+                result = op.run(initial_partial)
+
+                if result == mzero():
+                    alternative = (unit(value) >> catch_rule).run(
+                        initial_partial
+                    )
+                    return alternative
+                return result
+            return for_partial
+        attempt_rule_func_name = get_call_repr("attempt", catch_rule, *rules)
+        return policy_rule_func(m, attempt_rule_func_name)(for_value)
+    return catch_attempt
+catch_attempt = make_catch_attempt(List)
+
+
 
 
 #
@@ -541,13 +564,15 @@ push_context = make_push_context(List)
 
 
 def make_pop_context(m):
+    unit = make_unit(m)
+
     @policy_rule_func(m)
     def pop_context(passthru):
         """
         Pop the partial's context stack, returning whatever
         value it was called with.
         """
-        return regarding("/context", pop_value())
+        return regarding("/context", pop_value()) >> unit(passthru)
     return pop_context
 pop_context = make_pop_context(List)
 
@@ -686,3 +711,18 @@ def make_trace(m):
         return op
     return trace
 trace = make_trace(List)
+
+
+def make_args_receiver(m):
+    unit = make_unit(m)
+
+    def args_receiver(values):
+        @policy_rule_func(m)
+        def receive(idx, policy_rule):
+            def save(value):
+                values[idx] = value
+                return unit(None)
+            return policy_rule >> save
+        return receive
+    return args_receiver
+args_receiver = make_args_receiver(List)

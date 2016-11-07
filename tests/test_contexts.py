@@ -77,7 +77,7 @@ class ContextTestCase(TestCase):
         # rules itself.
         # ctx therefore should only have 1 policy, the `with_foo`
         # function above that just sets {foo: *, bar: foo}
-        items = ctx.get_finalized_items()
+        items, error_handler = ctx.get_finalized_items()
         self.assertEqual(len(items), 1)
 
         result = run_policy(ctx.finalize(), {"foo": "zebra"})

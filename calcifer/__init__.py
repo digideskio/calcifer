@@ -14,6 +14,7 @@ from calcifer.contexts import Context
 from calcifer.operators import (
     attempt,
     append_value,
+    catch_attempt,
     check,
     children,
     collect,

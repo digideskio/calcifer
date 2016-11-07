@@ -3,56 +3,61 @@ import functools
 import logging
 
 from calcifer.operators import (
-    wrap_context, attempt, trace, collect, unit, policies, regarding,
-    fail,
+    wrap_context, catch_attempt, trace, collect, unit, policies, regarding,
+    fail, args_receiver,
 )
 from calcifer.monads import (
-    PolicyRule, PolicyRuleFunc, get_call_repr
+    PolicyRule, PolicyRuleFunc, get_call_repr,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def ctx_apply(f, got, remaining):
+def ctx_apply(f, ctx_args):
     """
     Creates a promise to call `f` with some values corresponding to
-    the contextual values (or regular values) in `remaining`, accumulating
-    the true values in `got`.
-
-    `f` is then called when remaining is empty, and got is full.
+    the contextual values (or regular values) in `ctx_args`
     """
-    # base case:
-    if not remaining:
-        if got:
-            return f(*got)
+    if not ctx_args:
         return f
 
-    # recursive step:
-    first, rest = remaining[0], remaining[1:]
+    values = []
+    missing = set([])
+    for idx, arg in enumerate(ctx_args):
+        if hasattr(arg, 'finalize'):
+            arg = arg.finalize()
 
-    # so, depending on how exactly `first` is not a value:
-    if hasattr(first, 'finalize'):
-        # if it's a subcontext, finalize it to a policy rule,
-        # then add the policy rule back to `remaining` and recurse
-        value = first.finalize()
-        return ctx_apply(f, got, (value,)+rest)
+        if hasattr(arg, 'bind'):
+            values.append(None)
+            missing.add( (idx, arg) )
+            continue
 
-    if hasattr(first, 'bind'):
-        # if it's a policy rule, we're going to have to wait until
-        # the policy monad evaluates. so we bind the policy rule to
-        # a function that moves the value over to `got` and recurses
-        # there.
-        #
-        # (one might notice that Context never really accesses
-        # the value... by the time a request comes in and policy is
-        # evaluated, the underlying Context object will long have since
-        # been finalized() and possibly even GC'd. Context only does
-        # syntactic policy rule manipulation.)
-        return first >> (lambda value:
-                         ctx_apply(f, got+[value], rest))
+        values.append(arg)
 
-    # a regular, plain-ol' value!? bam. lists.
-    return ctx_apply(f, got+[first], rest)
+    if not missing:
+        return f(*values)
+
+    receive = args_receiver(values)
+
+    apply_rule = None
+    for idx, policy_rule in missing:
+        step = receive(idx, policy_rule)
+
+        if apply_rule is None:
+            apply_rule = step
+        else:
+            apply_rule = apply_rule >> step
+
+    if hasattr(f, 'rule_func'):
+        wrapped_func = f.rule_func
+    else:
+        wrapped_func = f
+
+    @functools.wraps(wrapped_func)
+    def finish(_):
+        return f(*values)
+
+    return apply_rule >> finish
 
 
 def wrap_ctx_values(action, args):
@@ -238,7 +243,7 @@ class BaseContext(object):
         else:
             self.items.append(
                 wrap_ctx_values(
-                    lambda args: ctx_apply(item, [], args),
+                    lambda args: ctx_apply(item, args),
                     args
                 )
             )
@@ -249,17 +254,26 @@ class BaseContext(object):
         Performs all syntactic manipulations to subcontexts and contained
         policy rules and returns a single policy rule aggregate.
         """
-        finalized_items = self.get_finalized_items()
-        wrapped = self.wrap(finalized_items)
+        finalized_items, finalized_error_handler = self.get_finalized_items()
+        wrapped = self.wrap(finalized_items, finalized_error_handler)
 
         return wrapped
 
     def get_finalized_items(self):
-        return [
+        finalized_items = [
             self._finalize_item(item, getattr(self, 'value', None))
             for item in self.items
             if self._warrants_inclusion(item)
         ]
+
+        if not self.error_handler:
+            finalized_error_handler = None
+
+        finalized_error_handler = self._finalize_item(
+            self.error_handler, getattr(self, 'value', None)
+        )
+
+        return finalized_items, finalized_error_handler
 
     @classmethod
     def _finalize_item(cls, item, provided_ctx_value=None):
@@ -291,19 +305,19 @@ class BaseContext(object):
             )
         return item
 
-    def wrap(self, items):
-        def make_action(ctx_wrapper, ctx_name, error_handler, num_ctx_args):
+    def wrap(self, items, error_handler):
+        def make_action(ctx_wrapper, ctx_name, num_ctx_args):
             @functools.wraps(ctx_wrapper)
             def action(items):
-                ctx_args = items[0:num_ctx_args]
-                items = items[num_ctx_args:]
-                wrapped = ctx_apply(ctx_wrapper(items), [], ctx_args)
+                error_handler = items[0]
+                ctx_args = items[1:num_ctx_args+1]
+                items = items[num_ctx_args+1:]
+                wrapped = ctx_apply(ctx_wrapper(items), ctx_args)
 
                 if ctx_name:
                     if error_handler:
-                        handler_rule = error_handler.finalize()
                         ctx_frame = ContextFrame(
-                            ctx_name, wrapped.ast, handler_rule
+                            ctx_name, wrapped.ast, error_handler
                         )
                     else:
                         ctx_frame = ContextFrame(
@@ -317,13 +331,12 @@ class BaseContext(object):
         action = make_action(
             self.wrapper,
             self.ctx_name,
-            self.error_handler,
             len(self.ctx_args)
         )
 
         wrapped = wrap_ctx_values(
             action,
-            self.ctx_args + tuple(items)
+            (error_handler,) + self.ctx_args + tuple(items)
         )
         return wrapped
 
@@ -362,12 +375,7 @@ class BaseContext(object):
 
     def attempt_catch(self):
         def attempt_wrapper(policy_rules):
-            catch_rule = policy_rules[0]
-            policy_rules = policy_rules[1:]
-            return attempt(
-                *policy_rules,
-                catch=catch_rule
-            )
+            return catch_attempt(policy_rules[0], *policy_rules[1:])
 
         attempt_ctx = self.subctx(attempt_wrapper)
         catch = attempt_ctx.trace(attempt_ctx.value)
@@ -394,6 +402,7 @@ class BaseContext(object):
 
     def apply(self, func, *args):
         def apply_for_policy_rules(policy_rules):
+            @functools.wraps(func)
             def apply_for_true_args(*true_args):
                 return collect(*policy_rules)(func(*true_args))
             return apply_for_true_args
@@ -421,6 +430,9 @@ class BaseContext(object):
             def __hash__(self):
                 return make_hash( self.true_args )
 
+            def __eq__(self, other):
+                return self.true_args == other.true_args
+
             def __repr__(self):
                 return "<MemoKey {}>".format(
                     get_call_repr(*self.true_args)
@@ -428,17 +440,16 @@ class BaseContext(object):
 
         @functools.wraps(func)
         def memoized_func(*true_args):
-            if not hasattr(memoized_func, 'memo'):
-                memoized_func.memo = {}
-            memo = memoized_func.memo
+            if not hasattr(func, 'memo'):
+                func.memo = {}
             key = MemoKey(*true_args)
-            if key in memo:
+            if key in func.memo:
                 logger.debug("Found memo key: %r", key)
-                return memo[key]
+                return func.memo[key]
             result = func(*true_args)
             logger.debug("Adding memo key: %r", key)
-            logger.debug("Existing memo keys: %r", memo.keys())
-            memo[key] = result
+            logger.debug("Existing memo keys: %r", func.memo.keys())
+            func.memo[key] = result
             return result
 
         return self.apply(memoized_func, *args)
@@ -446,6 +457,7 @@ class BaseContext(object):
     def check(self, func, *func_args):
         def make_check_wrapper(func):
             def check_wrapper(policy_rules):
+                @functools.wraps(func)
                 def eval_wrapper(*true_func_args):
                     func_result = func(*true_func_args)
                     if func_result:
