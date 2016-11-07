@@ -122,6 +122,9 @@ def policyM(m):
                 return "<PolicyRule: {}>".format(repr(self.ast))
             return super(PolicyRule, self).__repr__()
 
+        def __hash__(self):
+            return hash(self.value)
+
         def __deepcopy__(self, memo):
             return copy.copy(self)
 
@@ -178,7 +181,7 @@ def policyM(m):
     return PolicyRule
 
 
-class BasePolicyRuleFunc(object):
+class BasePolicyRuleFunc:
     __metaclass__ = ABCMeta
 
 
@@ -228,7 +231,6 @@ def policy_rule_func(m, rule_func_name=None):
                 return "<PolicyRuleFunc {}>".format(self.rule_func_name)
 
         rule_func = PolicyRuleFunc(rule_func, rule_func_name)
-        rule_func.__bases__ = ()
         return rule_func
     return decorator
 
