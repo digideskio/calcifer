@@ -206,7 +206,7 @@ def make_pop_value(m):
         Gets the value at the current node, and pops an element.
         """
         def popped(collection):
-            collection = copy.deepcopy(collection)
+            collection = copy.copy(collection)
             if not hasattr(collection, 'pop'):
                 raise NotImplementedError
 
