@@ -440,17 +440,16 @@ class BaseContext(object):
 
         @functools.wraps(func)
         def memoized_func(*true_args):
-            if not hasattr(memoized_func, 'memo'):
-                memoized_func.memo = {}
-            memo = memoized_func.memo
+            if not hasattr(func, 'memo'):
+                func.memo = {}
             key = MemoKey(*true_args)
-            if key in memo:
+            if key in func.memo:
                 logger.debug("Found memo key: %r", key)
-                return memo[key]
+                return func.memo[key]
             result = func(*true_args)
             logger.debug("Adding memo key: %r", key)
-            logger.debug("Existing memo keys: %r", memo.keys())
-            memo[key] = result
+            logger.debug("Existing memo keys: %r", func.memo.keys())
+            func.memo[key] = result
             return result
 
         return self.apply(memoized_func, *args)
