@@ -43,7 +43,7 @@ from calcifer.operators import (
 )
 from calcifer.partial import Partial
 from calcifer.monads import (
-    PolicyRule, PolicyRuleFunc
+    PolicyRule, PolicyRuleFunc, policy_rule, policy_rule_func,
 )
 from calcifer.policy import BasePolicy
 from calcifer.policy import DefaultPolicy as Policy

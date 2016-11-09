@@ -10,9 +10,8 @@ from pymonad import List
 
 from calcifer.tree import PolicyNode
 from calcifer.monads import (
-    policy_rule_func, get_call_repr,
-
-    PolicyRule
+    policy_rule_funcM as policy_rule_func,
+    get_call_repr, PolicyRule
 )
 
 logger = logging.getLogger(__name__)
