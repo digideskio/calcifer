@@ -354,7 +354,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regarding_scoping(self):
         assertEqual = self.assertEqual
-        @policy_rule_func(List)
+        @policy_rule_func
         def expect_scope(expected="/", msg=None):
             def for_actual(actual):
                 def checker():

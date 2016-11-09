@@ -34,6 +34,14 @@ class BasePolicy(object):
         new_self.args = args
         return new_self
 
+    def get_included_policy(self, policy_name):
+        return getattr(self.parent, policy_name)
+
+    def pair_included_policy(self, policy):
+        if hasattr(self, 'ref'):
+            policy.ref = self.ref
+        policy.args = self.args
+
     defaults = {
     }
 
@@ -88,14 +96,12 @@ class BasePolicy(object):
                 ctx.wrapper = lambda policy_rules: unless_errors(*policy_rules)
 
             includes = copy.copy(self.includes)
-            for include in includes:
-                if isinstance(include, str):
-                    policy = getattr(self.parent, include)
+            for policy_or_name in includes:
+                if isinstance(policy_or_name, str) and hasattr(self, 'parent'):
+                    policy = self.get_included_policy(policy_or_name)
                 else:
-                    policy = include
-                if hasattr(self, 'ref'):
-                    policy.ref = self.ref
-                policy.args = self.args
+                    policy = policy_or_name
+                self.pair_included_policy(policy)  # copy ref and args, e.g.
                 ctx.append(policy.context.finalize())
         return ctx
 

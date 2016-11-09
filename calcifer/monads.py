@@ -26,7 +26,7 @@ from abc import ABCMeta
 import copy
 import inspect
 import logging
-from pymonad import Monad
+from pymonad import Monad, List
 
 from calcifer import asts
 from calcifer.asts import get_call_repr # pylint: disable=unused-import
@@ -148,7 +148,7 @@ def policyM(m):
                 return self._bind_policy_rule(rule_func)
 
             if not isinstance(rule_func, BasePolicyRuleFunc):
-                rule_func = policy_rule_func(m)(rule_func)
+                rule_func = policy_rule_funcM(m)(rule_func)
 
             try:
                 binding = super(PolicyRule, self).bind(rule_func)
@@ -185,7 +185,7 @@ class BasePolicyRuleFunc:
     __metaclass__ = ABCMeta
 
 
-def policy_rule_func(m, rule_func_name=None):
+def policy_rule_funcM(m, rule_func_name=None):
     def decorator(rule_func):
         class PolicyRuleFunc(BasePolicyRuleFunc):
             def __init__(self, rule_func, rule_func_name=None):
@@ -236,3 +236,32 @@ def policy_rule_func(m, rule_func_name=None):
 
 PolicyRule = BasePolicyRule
 PolicyRuleFunc = BasePolicyRuleFunc
+
+# decorators
+def policy_rule(*args, **kwargs):
+    """
+    Decorator to properly wrap a function of type
+        partial -> (value, partial')
+
+    ie., PolicyRule value
+
+    May be used with or without parentheses.
+    """
+
+    if len(args) == 1 and callable(args[0]):
+        return policyM(List)(args[0])
+    return policyM(List, *args, **kwargs)
+
+def policy_rule_func(*args, **kwargs):
+    """
+    Decorator to properly wrap a function of type
+        value -> PolicyRule value'
+
+    May be used with or without parentheses.
+
+    :param rule_func_name: Optional, to provide additional semantic information
+    about the policy rule function
+    """
+    if len(args) == 1 and callable(args[0]):
+        return policy_rule_funcM(List)(args[0])
+    return policy_rule_funcM(List, *args, **kwargs)

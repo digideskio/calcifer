@@ -124,7 +124,9 @@ class LeafPolicyNode(PolicyNode):
             logger.debug((
                 "Attempting to select sub-path %r of %r"
             ), path, self)
-            raise Exception("Node cannot be traversed")
+            raise Exception(
+                "Node cannot be traversed, attempted sub-path: {}".format(path)
+            )
 
         return (self, self)
 
