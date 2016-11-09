@@ -238,9 +238,30 @@ PolicyRule = BasePolicyRule
 PolicyRuleFunc = BasePolicyRuleFunc
 
 # decorators
-policy_rule = policyM(List)
+def policy_rule(*args, **kwargs):
+    """
+    Decorator to properly wrap a function of type
+        partial -> (value, partial')
+
+    ie., PolicyRule value
+
+    May be used with or without parentheses.
+    """
+
+    if len(args) == 1 and callable(args[0]):
+        return policyM(List)(args[0])
+    return policyM(List, *args, **kwargs)
 
 def policy_rule_func(*args, **kwargs):
+    """
+    Decorator to properly wrap a function of type
+        value -> PolicyRule value'
+
+    May be used with or without parentheses.
+
+    :param rule_func_name: Optional, to provide additional semantic information
+    about the policy rule function
+    """
     if len(args) == 1 and callable(args[0]):
         return policy_rule_funcM(List)(args[0])
     return policy_rule_funcM(List, *args, **kwargs)
