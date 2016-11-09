@@ -257,7 +257,7 @@ License
     :scale: 100%
     :target: https://calcifer.readthedocs.io/en/latest/?badge=latest
 
-.. |Version| image:: https://img.shields.io/pypi/v/calcifer.svg?maxAge=2592000
+.. |Version| image:: https://img.shields.io/pypi/v/calcifer.svg?maxAge=86400
    :target: https://pypi.python.org/pypi/calcifer
 
 .. |Status| image:: https://travis-ci.org/DramaFever/calcifer.svg?branch=master
