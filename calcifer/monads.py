@@ -56,11 +56,13 @@ def stateT(m):
                     value, state = result
 
                     # after state transition
-                    m_new_result = function(value).run(state)
+                    run_func = function(value).run
+                    m_new_result = run_func(state)
 
                     return m_new_result
 
-                return self.run(state) >> for_state_result
+                run_func = self.run
+                return run_func(state) >> for_state_result
             return newState
 
         @property
