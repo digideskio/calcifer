@@ -39,7 +39,7 @@ class Context(BaseContext):
 
         :param value: if not provided, uses value for current node
         """
-        if len(args):
+        if args:
             value = args[0]
         else:
             value = self.value
@@ -61,7 +61,7 @@ class Context(BaseContext):
         """
         Opposite of ``require()`` - errors when value is defined
         """
-        if len(args):
+        if args:
             value = args[0]
         else:
             value = self.value
