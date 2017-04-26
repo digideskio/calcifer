@@ -1,5 +1,6 @@
 from calcifer.partial import Partial
 
+
 def run_policy(policy_rule, obj=None):
     if obj is None:
         obj = {}

@@ -92,7 +92,7 @@ class UnknownPolicyNode(PolicyNode):
 
         value, subpolicy = UnknownPolicyNode().select(rest)
 
-        return value, DictPolicyNode(**{first: subpolicy })
+        return value, DictPolicyNode(**{first: subpolicy})
 
     def match(self, value):
         return True, LeafPolicyNode(Value(value))
@@ -208,6 +208,7 @@ class DictPolicyNode(PolicyNode):
             isinstance(other, DictPolicyNode) and
             other.nodes == self.nodes
         )
+
 
 class ListPolicyNode(PolicyNode):
     def __init__(self, *nodes):

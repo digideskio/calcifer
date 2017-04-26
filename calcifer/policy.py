@@ -108,4 +108,4 @@ class BasePolicy(object):
 
 class DefaultPolicy(BasePolicy):
     def resolve(self, final):
-        return {k:v for k,v in final.root.items() if k != 'context'}
+        return {k: v for k, v in final.root.items() if k != 'context'}

@@ -175,6 +175,7 @@ class Context(BaseContext):
 
         # for each ctx frame,
         ctx_list_ctx = subctx.last_error.select("context")
+
         def for_ctx_list(ctx_list):
             return ctx_list
         ctx_list_ctx.apply(for_ctx_list, ctx_list_ctx.value)

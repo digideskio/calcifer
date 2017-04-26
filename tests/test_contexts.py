@@ -89,7 +89,6 @@ class ContextTestCase(TestCase):
             def resource(self):
                 return self.scope_subctx("/resource", "resource")
 
-
             def require_resource(self):
                 require_ctx = ctx.resource.require()
                 error_ctx = require_ctx.error_ctx()
@@ -200,6 +199,7 @@ class ContextTestCase(TestCase):
         a = ctx.select("/a")
         b = a.select("/b")
         c = b.select("/c")
+
         def func(b, a):
             return set_value(a + b)
 
@@ -280,10 +280,10 @@ class ContextTestCase(TestCase):
         c = b.select("/c")
 
         def f_ab(a, b):
-            return regarding("/results/f_ab", set_value(a+b))
+            return regarding("/results/f_ab", set_value(a + b))
 
         def f_ac(a, c):
-            return regarding("/results/f_ac", set_value(a+c))
+            return regarding("/results/f_ac", set_value(a + c))
 
         c.append(f_ab, a.value, b.value)
         c.append(f_ac, a.value, c.value)
@@ -305,8 +305,8 @@ class ContextTestCase(TestCase):
 
         self.assertEqual(f_a, a)
         self.assertEqual(f_b, b)
-        self.assertEqual(f_ab, a+b)
-        self.assertEqual(f_ac, a+c)
+        self.assertEqual(f_ab, a + b)
+        self.assertEqual(f_ac, a + c)
 
     def test_append_mixed(self):
         ctx = Context(name="root")
@@ -315,7 +315,7 @@ class ContextTestCase(TestCase):
         b = a.select("/b")
 
         def with_values(a, b):
-            return set_value(a+b)
+            return set_value(a + b)
 
         b.append(with_values, a.value, unit(2))
 

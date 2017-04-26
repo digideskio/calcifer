@@ -29,7 +29,7 @@ def ctx_apply(f, ctx_args):
 
         if hasattr(arg, 'bind'):
             values.append(None)
-            missing.add( (idx, arg) )
+            missing.add((idx, arg))
             continue
 
         values.append(arg)
@@ -310,8 +310,8 @@ class BaseContext(object):
             @functools.wraps(ctx_wrapper)
             def action(items):
                 error_handler = items[0]
-                ctx_args = items[1:num_ctx_args+1]
-                items = items[num_ctx_args+1:]
+                ctx_args = items[1:num_ctx_args + 1]
+                items = items[num_ctx_args + 1:]
                 wrapped = ctx_apply(ctx_wrapper(items), ctx_args)
 
                 if ctx_name:
@@ -428,7 +428,7 @@ class BaseContext(object):
                 return self.true_args < other.true_args
 
             def __hash__(self):
-                return make_hash( self.true_args )
+                return make_hash(self.true_args)
 
             def __eq__(self, other):
                 return self.true_args == other.true_args

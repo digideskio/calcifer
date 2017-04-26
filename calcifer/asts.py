@@ -4,6 +4,7 @@ import copy
 import re
 from six import string_types
 
+
 def get_call_repr(func_name, *args, **kwargs):
     args_expr = ", ".join([repr(arg) for arg in args])
     kwargs_expr = ", ".join([
@@ -18,6 +19,7 @@ def get_call_repr(func_name, *args, **kwargs):
     call_expr += ")"
     return call_expr
 
+
 class Node:
     __metaclass__ = ABCMeta
 
@@ -27,6 +29,7 @@ class Node:
     def __deepcopy__(self, memo):
         return copy.copy(self)
 
+
 def flatten(l):
     for el in l:
         if isinstance(el, collections.Iterable) and not isinstance(el, string_types):
@@ -34,6 +37,7 @@ def flatten(l):
                 yield sub
         else:
             yield el
+
 
 class Binding(Node):
     def __new__(cls, *operands):
@@ -49,12 +53,14 @@ class Binding(Node):
     def __repr__(self):
         return " >> ".join([repr(operand) for operand in self.operands])
 
+
 class PolicyRuleFunc(Node):
     def __init__(self, name):
         self.name = name
 
     def __repr__(self):
         return self.name
+
 
 class PolicyRuleFuncCall(Node):
     def __init__(self, func, args, kwargs, result=None):
