@@ -29,7 +29,7 @@ import logging
 from pymonad import Monad, List
 
 from calcifer import asts
-from calcifer.asts import get_call_repr # pylint: disable=unused-import
+from calcifer.asts import get_call_repr  # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def stateT(m):
         """
         @classmethod
         def unit(cls, value):
-            return cls(lambda state: m.unit( (value, state) ))
+            return cls(lambda state: m.unit((value, state)))
 
         def bind(self, function):
             @StateT
@@ -56,11 +56,13 @@ def stateT(m):
                     value, state = result
 
                     # after state transition
-                    m_new_result = function(value).run(state)
+                    run_func = function(value).run
+                    m_new_result = run_func(state)
 
                     return m_new_result
 
-                return self.run(state) >> for_state_result
+                run_func = self.run
+                return run_func(state) >> for_state_result
             return newState
 
         @property
@@ -132,6 +134,7 @@ def policyM(m):
             def for_operands(left, right):
                 def combined_for_partial(initial_partial):
                     m_results = left.run(initial_partial)
+
                     def for_m_result(m_result):
                         _, partial = m_result
                         return right.run(partial)
@@ -198,7 +201,7 @@ def policy_rule_funcM(m, rule_func_name=None):
                     rule_func_name = (
                         '<lambda {}:>'
                     ).format(
-                        ", ".join(inspect.getargspec(rule_func).args) # pylint: disable=deprecated-method
+                        ", ".join(inspect.getargspec(rule_func).args)  # pylint: disable=deprecated-method
                     )
 
                 if rule_func.__doc__:
@@ -234,8 +237,10 @@ def policy_rule_funcM(m, rule_func_name=None):
         return rule_func
     return decorator
 
+
 PolicyRule = BasePolicyRule
 PolicyRuleFunc = BasePolicyRuleFunc
+
 
 # decorators
 def policy_rule(*args, **kwargs):
@@ -251,6 +256,7 @@ def policy_rule(*args, **kwargs):
     if len(args) == 1 and callable(args[0]):
         return policyM(List)(args[0])
     return policyM(List, *args, **kwargs)
+
 
 def policy_rule_func(*args, **kwargs):
     """

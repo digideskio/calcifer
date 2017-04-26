@@ -31,7 +31,7 @@ class PolicyProviderTestCase(TestCase):
         class HasPolicy(object):
             class Policy(BasePolicy):
                 def resolve(self, policy_final):
-                     return policy_final.root['somenode']
+                    return policy_final.root['somenode']
 
             @Policy
             def a_policy(ctx):
@@ -64,13 +64,12 @@ class PolicyProviderTestCase(TestCase):
             def c(ctx):
                 ctx.select("/list").append_value(3)
 
-
         policy_haver = HasPolicy()
         a_policy = policy_haver.a
         results = a_policy.run({
             "list": []
         })
-        self.assertEqual(results[0], [1,2,3])
+        self.assertEqual(results[0], [1, 2, 3])
 
 
 if __name__ == '__main__':

@@ -17,6 +17,7 @@ from calcifer.tree import (
     PolicyNode, UnknownPolicyNode, LeafPolicyNode
 )
 
+
 class Partial(object):
     def __init__(self, root=None, path=None):
         if root is None:

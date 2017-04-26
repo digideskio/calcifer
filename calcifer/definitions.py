@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
+
 class Definition:
     __metaclass__ = ABCMeta
 
@@ -13,6 +14,7 @@ class Definition:
 
     def __repr__(self):
         return "Definition()"
+
 
 class Value(Definition):
     def __init__(self, value):

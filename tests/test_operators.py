@@ -31,6 +31,7 @@ regardingM = operators.make_regarding(Maybe)
 selectM = operators.make_select(Maybe)
 matchM = operators.make_match(Maybe)
 
+
 class PolicyTestCase(TestCase):
     def test_select(self):
         policy = DictPolicyNode()
@@ -58,7 +59,7 @@ class PolicyTestCase(TestCase):
 
         # make sure /foo/bar still exists in new_item
         path = "/foo/bar"
-        value, _= new_item.select(path)
+        value, _ = new_item.select(path)
         self.assertEqual(LeafPolicyNode(Value(5)), value)
 
     def test_select_no_set_path(self):
@@ -113,7 +114,7 @@ class PolicyBuilderTestCase(TestCase):
             regardingM("/fields/foo", set_valueM("foo")),
         )
 
-        maybe = rule.run( Partial() )
+        maybe = rule.run(Partial())
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
         foo_node, _ = partial.select("/fields/foo")
@@ -126,7 +127,7 @@ class PolicyBuilderTestCase(TestCase):
             regardingM("/fields/foo", set_valueM("bar")),
         )
 
-        maybe = rule.run( Partial() )
+        maybe = rule.run(Partial())
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
         foo_node, _ = partial.select("/fields/foo")
@@ -138,7 +139,7 @@ class PolicyBuilderTestCase(TestCase):
             regardingM("/fields/foo", set_valueM("foo"), set_valueM("bar"))
         )
 
-        maybe = rule.run( Partial() )
+        maybe = rule.run(Partial())
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
         foo_node, _ = partial.select("/fields/foo")
@@ -157,7 +158,7 @@ class PolicyBuilderTestCase(TestCase):
             regardingM("/fields/bar", matchM("foobar"))
         )
 
-        maybe = rule.run( Partial() )
+        maybe = rule.run(Partial())
         self.assertTrue(isinstance(maybe, Just))
         _, partial = maybe.getValue()
         foo_node, _ = partial.select("/fields/foo")
@@ -170,7 +171,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", set_value("foo"))
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -193,7 +194,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/bar", match("foobar"))
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -211,7 +212,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/bar", match("barfu"))
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -223,7 +224,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", permit_values(["foo", "bar"])),
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -238,7 +239,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", match("foo"))
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -253,7 +254,7 @@ class PolicyBuilderTestCase(TestCase):
             regarding("/fields/foo", permit_values(["foo", "bar"]))
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
         self.assertTrue(isinstance(ps, List))
 
         results = ps.getValue()
@@ -277,7 +278,7 @@ class PolicyBuilderTestCase(TestCase):
             )
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
 
         self.assertTrue(isinstance(ps, List))
 
@@ -299,7 +300,7 @@ class PolicyBuilderTestCase(TestCase):
             )
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
 
         self.assertTrue(isinstance(ps, List))
 
@@ -313,12 +314,12 @@ class PolicyBuilderTestCase(TestCase):
                 (check(lambda: value) >> set_value)
             )
 
-        ps = get_policies(5).run( Partial() )
+        ps = get_policies(5).run(Partial())
         results = ps.getValue()
         values = [r[1].select("/fields/foo")[0].value for r in results]
         self.assertEqual([5], values)
 
-        ps = get_policies(1000).run( Partial() )
+        ps = get_policies(1000).run(Partial())
         results = ps.getValue()
         values = [r[1].select("/fields/foo")[0].value for r in results]
         self.assertEqual([1000], values)
@@ -333,7 +334,7 @@ class PolicyBuilderTestCase(TestCase):
             )
         )
 
-        ps = rule.run( Partial() )
+        ps = rule.run(Partial())
 
         self.assertTrue(isinstance(ps, List))
 
@@ -345,7 +346,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regarding_return(self):
         rule = regarding("/foo")
-        ps = rule.run( Partial.from_obj({"foo": 5}) )
+        ps = rule.run(Partial.from_obj({"foo": 5}))
 
         results = ps.getValue()
         values = [r[0] for r in results]
@@ -354,6 +355,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_regarding_scoping(self):
         assertEqual = self.assertEqual
+
         @policy_rule_func
         def expect_scope(expected="/", msg=None):
             def for_actual(actual):
@@ -376,12 +378,11 @@ class PolicyBuilderTestCase(TestCase):
             ),
         )
 
-        rule.run( Partial.from_obj({}) )
-
+        rule.run(Partial.from_obj({}))
 
     def test_children(self):
         rule = children()
-        ps = rule.run( Partial.from_obj({"foo": 5}) )
+        ps = rule.run(Partial.from_obj({"foo": 5}))
 
         results = ps.getValue()
         values = [r[0] for r in results]
@@ -390,7 +391,7 @@ class PolicyBuilderTestCase(TestCase):
 
     def test_children_list(self):
         rule = children()
-        ps = rule.run( Partial.from_obj([9,4,7,1,1]) )
+        ps = rule.run(Partial.from_obj([9, 4, 7, 1, 1]))
 
         results = ps.getValue()
         values = [r[0] for r in results]
@@ -401,13 +402,14 @@ class PolicyBuilderTestCase(TestCase):
         counter = {
             "num": 0
         }
+
         def increment_set(_):
             counter['num'] += 1
             num = counter['num']
             return set_value(num)
 
         rule = children() >> each(increment_set)
-        ps = rule.run( Partial.from_obj({"a": 0, "b": 0, "c": 0}) )
+        ps = rule.run(Partial.from_obj({"a": 0, "b": 0, "c": 0}))
 
         results = ps.getValue()
         roots = [r[1].root for r in results]
@@ -418,14 +420,14 @@ class PolicyBuilderTestCase(TestCase):
 
         values = sorted(root.values())
 
-        self.assertEqual(values, [1,2,3])
+        self.assertEqual(values, [1, 2, 3])
 
     def test_each_list(self):
         def increment(value):
-            return set_value(value+1)
+            return set_value(value + 1)
 
         rule = children() >> each(increment)
-        ps = rule.run( Partial.from_obj([2, 5, 1]) )
+        ps = rule.run(Partial.from_obj([2, 5, 1]))
 
         results = ps.getValue()
         roots = [r[1].root for r in results]
@@ -434,13 +436,13 @@ class PolicyBuilderTestCase(TestCase):
         values = roots[0]
         self.assertIsInstance(values, list)
 
-        self.assertEqual(values, [3,6,2])
+        self.assertEqual(values, [3, 6, 2])
 
     def test_each_ref(self):
         ref_obj = {"a": 7, "b": 3, "c": -1}
         rule = children() >> each(set_value, ref=ref_obj)
 
-        ps = rule.run( Partial.from_obj({"a": 0, "b": 0, "c": 0}) )
+        ps = rule.run(Partial.from_obj({"a": 0, "b": 0, "c": 0}))
 
         results = ps.getValue()
         roots = [r[1].root for r in results]

@@ -33,6 +33,8 @@ def make_unit(m):
             return m.unit((value, partial))
         return for_partial
     return unit
+
+
 unit = make_unit(List)
 
 
@@ -51,10 +53,11 @@ def make_unit_value(m):
         def for_partial(partial):
             if hasattr(node, 'value'):
                 return m.unit((node.value, partial))
-            else:
-                return m.unit((None, partial))
+            return m.unit((None, partial))
         return for_partial
     return unit_value
+
+
 unit_value = make_unit_value(List)
 
 
@@ -73,6 +76,8 @@ def make_set_value(m):
             return m.unit(partial.set_value(value))
         return for_partial
     return set_value
+
+
 set_value = make_set_value(List)
 
 
@@ -97,6 +102,8 @@ def make_select(m):
             return m.unit(partial.select(scope, set_path=set_path))
         return for_partial
     return select
+
+
 select = make_select(List)
 
 
@@ -109,9 +116,11 @@ def make_scope(m):
         :returns: PolicyRule *jsonpointer*
         """
         def for_partial(partial):
-            return m.unit( (partial.scope, partial) )
+            return m.unit((partial.scope, partial))
         return for_partial
     return scope
+
+
 scope = make_scope(List)
 
 
@@ -124,9 +133,11 @@ def make_get_node(m):
         :returns: PolicyRule (Node *v*)
         """
         def for_partial(partial):
-            return m.unit( partial.select("") )
+            return m.unit(partial.select(""))
         return for_partial
     return get_node
+
+
 get_node = make_get_node(List)
 
 
@@ -142,11 +153,13 @@ def make_children(m):
         def for_partial(partial):
             node, _ = partial.select("")
             if not hasattr(node, 'keys'):
-                return m.unit( ([], partial) )
+                return m.unit(([], partial))
 
-            return m.unit( (list(node.keys), partial) )
+            return m.unit((list(node.keys), partial))
         return for_partial
     return children
+
+
 children = make_children(List)
 
 
@@ -164,6 +177,8 @@ def make_get_value(m):
         """
         return get_node() >> unit_value
     return get_value
+
+
 get_value = make_get_value(List)
 
 
@@ -193,7 +208,10 @@ def make_append_value(m):
             lambda collection: set_value(append_to(collection))
         )
     return append_value
+
+
 append_value = make_append_value(List)
+
 
 def make_pop_value(m):
     get_value = make_get_value(m)
@@ -213,6 +231,8 @@ def make_pop_value(m):
             return collection
         return get_value() >> (lambda collection: set_value(popped(collection)))
     return pop_value
+
+
 pop_value = make_pop_value(List)
 
 
@@ -237,9 +257,11 @@ def make_define_as(m):
             new_definition, new_partial = partial.define_as(definition)
             if new_definition is None:
                 return m.mzero()
-            return m.unit( (new_definition, new_partial) )
+            return m.unit((new_definition, new_partial))
         return for_partial
     return define_as
+
+
 define_as = make_define_as(List)
 
 
@@ -252,9 +274,11 @@ def make_check(m):
         and an unchanged partial
         """
         def for_partial(partial):
-            return m.unit( (func(), partial) )
+            return m.unit((func(), partial))
         return for_partial
     return check
+
+
 check = make_check(List)
 
 
@@ -264,6 +288,7 @@ check = make_check(List)
 
 def make_collect(m):
     unit = make_unit(m)
+
     def collect(*rule_funcs):
         """
         Given a list of policy rule functions, returns a single policy rule
@@ -274,7 +299,8 @@ def make_collect(m):
             def for_initial_partial(initial_partial):
                 initial_scope = initial_partial.scope
 
-                m_results = m.unit( (incoming_value, initial_partial) )
+                m_results = m.unit((incoming_value, initial_partial))
+
                 def for_rule_func(rule_func):
                     def for_m_result(m_result):
                         _, partial = m_result
@@ -299,6 +325,8 @@ def make_collect(m):
         collect_func_name = get_call_repr('collect', *rule_funcs)
         return policy_rule_func(m, collect_func_name)(for_incoming_value)
     return collect
+
+
 collect = make_collect(List)
 
 
@@ -315,7 +343,8 @@ def make_policies(m):
         def for_initial_partial(initial_partial):
             initial_scope = initial_partial.scope
 
-            m_results = m.unit( (None, initial_partial) )
+            m_results = m.unit((None, initial_partial))
+
             def for_rule_func(rule_func):
                 def for_m_result(m_result):
                     _, partial = m_result
@@ -334,6 +363,8 @@ def make_policies(m):
             return m_results
         return for_initial_partial
     return policies
+
+
 policies = make_policies(List)
 
 
@@ -368,6 +399,7 @@ def make_regarding(m):
                     results = rule_func.run(inner_partial)
                 else:
                     results = rule_func(value).run(inner_partial)
+
                 def for_result(result):
                     _, partial = result
                     _, rescoped_partial = partial.select(
@@ -386,11 +418,14 @@ def make_regarding(m):
         return op
 
     return regarding
+
+
 regarding = make_regarding(List)
 
 
 def make_each(m):
     unit = make_unit(m)
+
     def each(*rule_funcs, **kwargs):
         """
         `each(rule_func)` is a policy rule function that accepts a
@@ -423,6 +458,8 @@ def make_each(m):
         each_rule_func_name = get_call_repr("each", *rule_funcs, **kwargs)
         return policy_rule_func(m, each_rule_func_name)(for_keys)
     return each
+
+
 each = make_each(List)
 
 
@@ -437,6 +474,8 @@ def make_fail(m):
             return m.mzero()
         return for_partial
     return fail
+
+
 fail = make_fail(List)
 
 
@@ -455,11 +494,13 @@ def make_match(m):
             matches, new_partial = partial.match(compare_to)
 
             if matches:
-                return m.unit( (compare_to, new_partial) )
+                return m.unit((compare_to, new_partial))
 
             return m.mzero()
         return for_partial
     return match
+
+
 match = make_match(List)
 
 
@@ -484,6 +525,8 @@ def make_permit_values(m):
             return monad
         return for_partial
     return permit_values
+
+
 permit_values = make_permit_values(List)
 
 
@@ -505,12 +548,14 @@ def make_attempt(m):
                 result = op.run(initial_partial)
 
                 if result == mzero():
-                    return m.unit( (value, initial_partial) )
+                    return m.unit((value, initial_partial))
                 return result
             return for_partial
         attempt_rule_func_name = get_call_repr("attempt", *rules)
         return policy_rule_func(m, attempt_rule_func_name)(for_value)
     return attempt
+
+
 attempt = make_attempt(List)
 
 
@@ -540,9 +585,9 @@ def make_catch_attempt(m):
         attempt_rule_func_name = get_call_repr("attempt", catch_rule, *rules)
         return policy_rule_func(m, attempt_rule_func_name)(for_value)
     return catch_attempt
+
+
 catch_attempt = make_catch_attempt(List)
-
-
 
 
 #
@@ -559,6 +604,8 @@ def make_push_context(m):
         """
         return regarding("/context", append_value(context))
     return push_context
+
+
 push_context = make_push_context(List)
 
 
@@ -573,6 +620,8 @@ def make_pop_context(m):
         """
         return regarding("/context", pop_value()) >> unit(passthru)
     return pop_context
+
+
 pop_context = make_pop_context(List)
 
 
@@ -588,6 +637,8 @@ def make_wrap_context(m):
         return push_context(context) >> op >> pop_context
 
     return wrap_context
+
+
 wrap_context = make_wrap_context(List)
 
 
@@ -611,9 +662,11 @@ def make_require_value(m):
             if not node:
                 logger.debug("require_value fail")
                 return m.mzero()
-            return m.unit( (None, partial) )
+            return m.unit((None, partial))
         return for_partial
     return require_value
+
+
 require_value = make_require_value(List)
 
 
@@ -631,12 +684,14 @@ def make_forbid_value(m):
         def for_partial(partial):
             if isinstance(node, PolicyNode):
                 if node.value is None:
-                    return m.unit( (None, partial) )
+                    return m.unit((None, partial))
             if node is None:
-                return m.unit( (None, partial) )
+                return m.unit((None, partial))
             return m.mzero()
         return for_partial
     return forbid_value
+
+
 forbid_value = make_forbid_value(List)
 
 
@@ -650,11 +705,13 @@ def make_unless_errors(m):
             def for_partial(partial):
                 errors = partial.root.get('errors', None)
                 if errors:
-                    return m.unit( (None, partial) )
+                    return m.unit((None, partial))
                 return rule.run(partial)
             return for_partial
         return policies(*[unless_errors_step(rule) for rule in rules])
     return unless_errors
+
+
 unless_errors = make_unless_errors(List)
 
 
@@ -709,6 +766,8 @@ def make_trace(m):
 
         return op
     return trace
+
+
 trace = make_trace(List)
 
 
@@ -724,4 +783,6 @@ def make_args_receiver(m):
             return policy_rule >> save
         return receive
     return args_receiver
+
+
 args_receiver = make_args_receiver(List)
