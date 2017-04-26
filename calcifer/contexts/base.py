@@ -462,8 +462,7 @@ class BaseContext(object):
                     func_result = func(*true_func_args)
                     if func_result:
                         return collect(*policy_rules)(func_result)
-                    else:
-                        return policies()
+                    return policies()
                 return eval_wrapper
             return check_wrapper
 

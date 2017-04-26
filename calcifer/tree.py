@@ -67,8 +67,7 @@ class PolicyNode:
             return DictPolicyNode(**obj)
         if isinstance(obj, list):
             return ListPolicyNode(*obj)
-        else:
-            return LeafPolicyNode(Value(obj))
+        return LeafPolicyNode(Value(obj))
 
 
 class UnknownPolicyNode(PolicyNode):

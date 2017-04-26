@@ -53,8 +53,7 @@ def make_unit_value(m):
         def for_partial(partial):
             if hasattr(node, 'value'):
                 return m.unit((node.value, partial))
-            else:
-                return m.unit((None, partial))
+            return m.unit((None, partial))
         return for_partial
     return unit_value
 
