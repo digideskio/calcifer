@@ -54,6 +54,21 @@ class PolicyNode:
         """
         return False, self
 
+    @abstractmethod
+    def choose(self, step):
+        """
+        Moves down the given step and returns:
+        (the chosen node, the new version of itself (list or dict), and a dict of the steps not taken)
+        """
+        return (None, None, {})
+
+    @abstractmethod
+    def reconstruct(self, possible_steps):
+        """
+        This method takes in a dictionary of possible steps that could be taken and returns a node object
+        """
+        raise NotImplementedError
+
     @staticmethod
     def from_obj(obj):
         """
@@ -78,8 +93,20 @@ class UnknownPolicyNode(PolicyNode):
     def value(self):
         return None
 
+    def reconstruct(self, possible_steps):
+        raise TypeError
+
     def get_template(self):
         return {}
+
+    def choose(self, step):
+        if isinstance(step, int):
+            new_self = ListPolicyNode()
+            steps_not_taken = {k: UnknownPolicyNode() for k in range(step)}
+        else:
+            new_self = DictPolicyNode()
+            steps_not_taken = {}
+        return (UnknownPolicyNode(), new_self, steps_not_taken)
 
     def select(self, path=None):
         if not path:
@@ -115,8 +142,16 @@ class LeafPolicyNode(PolicyNode):
     def value(self):
         return self._definition.value
 
+    def reconstruct(self, possible_steps):
+        if possible_steps:
+            raise TypeError
+        return self.__class__(self._definition)
+
     def get_template(self):
         return self.definition.get_template()
+
+    def choose(self, step):
+        raise TypeError("You're at the end dummy!")
 
     def select(self, path=None):
         if path:
@@ -168,6 +203,15 @@ class DictPolicyNode(PolicyNode):
             name: node.value
             for name, node in self.nodes.items()
         }
+
+    def reconstruct(self, possible_steps):
+        return DictPolicyNode(**possible_steps)
+
+    def choose(self, step):
+        chosen_node = self._nodes.get(step, UnknownPolicyNode())
+        new_self = self
+        steps_not_taken = {k: v for k, v in self._nodes.items() if k != step}
+        return chosen_node, new_self, steps_not_taken
 
     def get_template(self):
         return {
@@ -222,7 +266,7 @@ class ListPolicyNode(PolicyNode):
 
     @property
     def keys(self):
-        return [str(key) for key in range(len(self._nodes))]
+        return [key for key in range(len(self._nodes))]
 
     @property
     def value(self):
@@ -230,6 +274,27 @@ class ListPolicyNode(PolicyNode):
             node.value
             for node in self.nodes
         ]
+
+    def reconstruct(self, possible_steps):
+        if not possible_steps:
+            return ListPolicyNode()
+        highest_key = sorted(possible_steps.keys(), reverse=True)[0]
+        return ListPolicyNode(*[
+            possible_steps.get(i, UnknownPolicyNode())
+            for i in range(highest_key + 1)
+        ])
+
+    def choose(self, step):
+        if len(self._nodes) > step:
+            # We have the step for sure
+            chosen_node = self._nodes[step]
+        else:
+            # step does not exist yet, must populate list with UnknownPolicyNodes
+            chosen_node = UnknownPolicyNode()
+
+        new_self = self
+        steps_not_taken = {i: self._nodes[i] for i in range(len(self._nodes)) if i != step}
+        return chosen_node, new_self, steps_not_taken
 
     def get_template(self):
         return [

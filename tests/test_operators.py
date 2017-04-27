@@ -41,25 +41,28 @@ class PolicyTestCase(TestCase):
         foo_node['bar'] = bar_node
         policy["foo"] = foo_node
 
-        item = Partial(policy)
+        partial = Partial(policy)
 
-        # select existing item
-        path = "/foo/bar"
-        node, new_item = item.select(path)
-        self.assertEqual(item._root, new_item._root)
+        # select existing partial
+        path = ["foo", "bar"]
+        scope = "/{}".format("/".join(path))
+        node, new_partial = partial.select(scope)
+        self.assertEqual(partial.root, new_partial.root)
         self.assertEqual(LeafPolicyNode(Value(5)), node)
-        self.assertEqual(path, new_item._pointer.path)
+        self.assertEqual(path, new_partial.path)
 
-        # select new item
-        path = "/foo/baz"
-        value, new_item = item.select(path)
-        self.assertNotEqual(item._root, new_item._root)
+        # select new partial
+        path = ["foo", "baz"]
+        scope = "/{}".format("/".join(path))
+        value, new_partial = partial.select(scope)
+        self.assertNotEqual(partial.root, new_partial.root)
         self.assertEqual(UnknownPolicyNode(), value)
-        self.assertEqual(path, new_item._pointer.path)
+        self.assertEqual(path, new_partial.path)
 
-        # make sure /foo/bar still exists in new_item
-        path = "/foo/bar"
-        value, _ = new_item.select(path)
+        # make sure /foo/bar still exists in new_partial
+        path = ["foo", "bar"]
+        scope = "/{}".format("/".join(path))
+        value, new_new_partial = new_partial.select(scope)
         self.assertEqual(LeafPolicyNode(Value(5)), value)
 
     def test_select_no_set_path(self):
@@ -427,7 +430,8 @@ class PolicyBuilderTestCase(TestCase):
             return set_value(value + 1)
 
         rule = children() >> each(increment)
-        ps = rule.run(Partial.from_obj([2, 5, 1]))
+        partial = Partial.from_obj([2, 5, 1])
+        ps = rule.run(partial)
 
         results = ps.getValue()
         roots = [r[1].root for r in results]

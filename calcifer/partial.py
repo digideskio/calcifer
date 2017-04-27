@@ -11,11 +11,10 @@ The data structure has two parts:
 Operations are provided on Partial that allow the manipulation of either
 the policy tree or the pointer, or both.
 """
-from jsonpointer import JsonPointer
-
 from calcifer.tree import (
     PolicyNode, UnknownPolicyNode, LeafPolicyNode
 )
+from calcifer.zipper import Zipper
 
 
 class Partial(object):
@@ -25,8 +24,7 @@ class Partial(object):
         if path is None:
             path = []
 
-        self._root = root
-        self._pointer = JsonPointer.from_parts(path)
+        self.zipper = Zipper([], root).select(path)
 
     @staticmethod
     def from_obj(obj):
@@ -36,18 +34,15 @@ class Partial(object):
 
     @property
     def root(self):
-        return self._root.value
+        return self.zipper.root.node.value
 
     @property
     def path(self):
-        return self._pointer.parts
+        return self.zipper.path
 
     @property
     def scope(self):
-        sel = self._pointer.path
-        if not sel:
-            sel = u'/'
-        return sel
+        return "/{}".format("/".join([str(step) for step in self.zipper.path]))
 
     @property
     def scope_value(self):
@@ -55,7 +50,7 @@ class Partial(object):
         return node.value
 
     def get_template(self):
-        return self._root.get_template()
+        return self.zipper.root.node.get_template()
 
     @staticmethod
     def sub_scope(parent_abs='/', child_rel=''):
@@ -70,27 +65,51 @@ class Partial(object):
 
         return '/'.join(rels)
 
-    def select(self, selector, set_path=True):
-        old_selector = self.scope
-        old_path = self._pointer.parts
+    def select(self, scope, set_path=True):
+        """
+        Select a node at a given scope, possibly setting the path on a newly returned
+        partial.
 
-        if not selector:
-            selector = old_selector
-        elif selector[0] != '/':
-            selector = self.sub_scope(old_selector, selector)
+        Cases:
+            - If scope begins with "/", it's an absolute path
+            - Otherwise, scope is a relative path, and the existing path should be subscoped
+        """
+        old_scope = self.scope
+        old_path = self.zipper.path
 
-        if selector == '/':
-            selector = ''
+        if not scope:
+            scope = old_scope
+        elif scope[0] != '/':
+            scope = self.sub_scope(old_scope, scope)
 
-        selected_path = JsonPointer(selector).parts
+        # scope should be absolute
+        # convert scope to path
+
+        # remove leading slash
+        scope = scope[1:]
+        if scope:
+            selected_path = scope.split("/")  # to remove leading slash
+        else:
+            selected_path = []
+
+        def maybe_coerce_to_int(step):
+            try:
+                return int(step)
+            except ValueError:
+                return step
+
+        selected_path = [
+            maybe_coerce_to_int(step) for step in selected_path
+        ]
+
+        new_zipper = self.zipper.root.select(selected_path)
 
         if set_path:
             new_path = selected_path
         else:
             new_path = old_path
 
-        node, new_root = self._root.select(selected_path)
-        return node, Partial(new_root, new_path)
+        return new_zipper.node, Partial(new_zipper.root.node, new_path)
 
     def define_as(self, definition):
         existing_value = self.scope_value
@@ -100,36 +119,25 @@ class Partial(object):
                 return (None, self)
             definition = new_definition
 
-        return (
-            definition, Partial(
-                self._pointer.set(
-                    self._root, LeafPolicyNode(definition), inplace=False
-                ),
-                path=self._pointer.parts
-            )
-        )
+        new_zipper = self.zipper.set_node(LeafPolicyNode(definition))
+        partial = Partial(new_zipper.root.node, self.path)
+        return definition, partial
 
     def set_value(self, value, selector=None):
+        partial = self
         if selector is not None:
-            pointer = JsonPointer(selector)
-        else:
-            pointer = self._pointer
+            _, partial = partial.select(selector)
+        new_zipper = partial.zipper.set_node(PolicyNode.from_obj(value))
 
         return (
-            value, Partial(
-                pointer.set(
-                    self._root, PolicyNode.from_obj(value), inplace=False
-                ),
-                path=self._pointer.parts
-            )
+            value, Partial(new_zipper.root.node, path=self.path)
         )
 
     def set_node(self, node):
+        new_zipper = self.zipper.set_node(node)
+
         return (
-            node, Partial(
-                self._pointer.set(self._root, node, inplace=False),
-                path=self._pointer.parts
-            )
+            node, Partial(new_zipper.root.node, path=self.path)
         )
 
     def match(self, value):
@@ -142,4 +150,4 @@ class Partial(object):
         return False, self
 
     def __repr__(self):
-        return "Partial(root={}, path={})".format(self._root, self.path)
+        return "Partial(root={}, path={})".format(self.root, self.path)
