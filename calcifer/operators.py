@@ -94,7 +94,7 @@ def make_select(m):
         :keyword set_path: Sets the scope
         :type set_path: bool
 
-        :type scope: jsonpointer
+        :type scope: json pointer string
 
         :returns: PolicyRule (Node *v*)
         """
@@ -113,7 +113,7 @@ def make_scope(m):
         """
         Returns the current scope for the partial
 
-        :returns: PolicyRule *jsonpointer*
+        :returns: PolicyRule *string json pointer*
         """
         def for_partial(partial):
             return m.unit((partial.scope, partial))
