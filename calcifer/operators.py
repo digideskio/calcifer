@@ -155,7 +155,8 @@ def make_children(m):
             if not hasattr(node, 'keys'):
                 return m.unit(([], partial))
 
-            return m.unit((list(node.keys), partial))
+            keys = [str(key) for key in node.keys]
+            return m.unit((keys, partial))
         return for_partial
     return children
 
@@ -439,6 +440,7 @@ def make_each(m):
         ref_obj = kwargs.get('ref')
 
         def for_keys(keys):
+
             @policy_rule_func(m)
             def each_step(key, rule_func):
                 if ref_obj is not None:
