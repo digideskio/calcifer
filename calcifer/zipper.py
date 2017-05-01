@@ -26,7 +26,8 @@ class Zipper(object):
 
     @property
     def path(self):
-        return list(reversed(map(lambda breadcrumb: breadcrumb.step_taken, self.breadcrumbs)))
+        mapped_crumbs = list(map(lambda breadcrumb: breadcrumb.step_taken, self.breadcrumbs))
+        return list(reversed(mapped_crumbs))
 
     def select(self, path):
         new_zipper = self
