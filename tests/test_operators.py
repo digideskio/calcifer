@@ -10,7 +10,7 @@ from calcifer.tree import (
     LeafPolicyNode, DictPolicyNode, UnknownPolicyNode, Value
 )
 from calcifer import (
-    Partial,
+    Partial, Zipper,
     set_value, select, check, policies, regarding, fail, match, attempt,
     permit_values, define_as, children, each, scope,
 )
@@ -41,7 +41,7 @@ class PolicyTestCase(TestCase):
         foo_node['bar'] = bar_node
         policy["foo"] = foo_node
 
-        partial = Partial(policy)
+        partial = Partial(Zipper([], policy))
 
         # select existing partial
         path = ["foo", "bar"]
@@ -72,7 +72,7 @@ class PolicyTestCase(TestCase):
         foo_node["bar"] = bar_node
         policy["foo"] = foo_node
 
-        item = Partial(policy)
+        item = Partial(Zipper([], policy))
 
         path = "/foo/bar"
         value, new_item = item.select(path, set_path=False)

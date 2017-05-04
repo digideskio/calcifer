@@ -41,7 +41,7 @@ from calcifer.operators import (
     unless_errors,
     wrap_context,
 )
-from calcifer.partial import Partial
+from calcifer.partial import Partial, Zipper
 from calcifer.monads import (
     PolicyRule, PolicyRuleFunc, policy_rule, policy_rule_func,
 )
