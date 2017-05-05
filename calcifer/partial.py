@@ -11,6 +11,7 @@ The data structure has two parts:
 Operations are provided on Partial that allow the manipulation of either
 the policy tree or the pointer, or both.
 """
+import os
 from calcifer.tree import (
     PolicyNode, UnknownPolicyNode, LeafPolicyNode
 )
@@ -18,18 +19,15 @@ from calcifer.zipper import Zipper
 
 
 class Partial(object):
-    def __init__(self, root=None, path=None):
-        if root is None:
-            root = UnknownPolicyNode()
-        if path is None:
-            path = []
-
-        self.zipper = Zipper([], root).select(path)
+    def __init__(self, zipper=None):
+        if zipper is None:
+            zipper = Zipper([], UnknownPolicyNode())
+        self.zipper = zipper
 
     @staticmethod
     def from_obj(obj):
         return Partial(
-            root=PolicyNode.from_obj(obj)
+            Zipper([], PolicyNode.from_obj(obj))
         )
 
     @property
@@ -52,19 +50,6 @@ class Partial(object):
     def get_template(self):
         return self.zipper.root.node.get_template()
 
-    @staticmethod
-    def sub_scope(parent_abs='/', child_rel=''):
-        rels = []
-        if parent_abs == '/':
-            rels.append('')
-        else:
-            rels += parent_abs.split('/')
-
-        if child_rel:
-            rels += child_rel.split('/')
-
-        return '/'.join(rels)
-
     def select(self, scope, set_path=True):
         """
         Select a node at a given scope, possibly setting the path on a newly returned
@@ -75,22 +60,17 @@ class Partial(object):
             - Otherwise, scope is a relative path, and the existing path should be subscoped
         """
         old_scope = self.scope
-        old_path = self.zipper.path
 
-        if not scope:
+        if scope == "":
             scope = old_scope
-        elif scope[0] != '/':
-            scope = self.sub_scope(old_scope, scope)
+        elif scope[0] != "/":
+            scope = "{}/{}".format(old_scope, scope)
 
-        # scope should be absolute
-        # convert scope to path
-
-        # remove leading slash
-        scope = scope[1:]
-        if scope:
-            selected_path = scope.split("/")  # to remove leading slash
+        relative_scope = os.path.relpath(scope, old_scope)
+        if relative_scope == '.':
+            relative_path = []
         else:
-            selected_path = []
+            relative_path = relative_scope.split('/')
 
         def maybe_coerce_to_int(step):
             try:
@@ -98,18 +78,28 @@ class Partial(object):
             except ValueError:
                 return step
 
-        selected_path = [
-            maybe_coerce_to_int(step) for step in selected_path
-        ]
+        zipper = self.zipper
+        undo_path = []
+        for step in relative_path:
+            if step == '..':
+                zipper, undo_step = zipper.up()
+            else:
+                step = maybe_coerce_to_int(step)
+                zipper = zipper.down(step)
+                undo_step = '..'
 
-        new_zipper = self.zipper.root.select(selected_path)
+            undo_path.insert(0, undo_step)
 
-        if set_path:
-            new_path = selected_path
-        else:
-            new_path = old_path
+        node = zipper.node
 
-        return new_zipper.node, Partial(new_zipper.root.node, new_path)
+        if not set_path:
+            for step in undo_path:
+                if step == '..':
+                    zipper, _ = zipper.up()
+                else:
+                    zipper = zipper.down(step)
+
+        return node, Partial(zipper)
 
     def define_as(self, definition):
         existing_value = self.scope_value
@@ -120,7 +110,7 @@ class Partial(object):
             definition = new_definition
 
         new_zipper = self.zipper.set_node(LeafPolicyNode(definition))
-        partial = Partial(new_zipper.root.node, self.path)
+        partial = Partial(new_zipper)
         return definition, partial
 
     def set_value(self, value, selector=None):
@@ -130,14 +120,14 @@ class Partial(object):
         new_zipper = partial.zipper.set_node(PolicyNode.from_obj(value))
 
         return (
-            value, Partial(new_zipper.root.node, path=self.path)
+            value, Partial(new_zipper)
         )
 
     def set_node(self, node):
         new_zipper = self.zipper.set_node(node)
 
         return (
-            node, Partial(new_zipper.root.node, path=self.path)
+            node, Partial(new_zipper)
         )
 
     def match(self, value):

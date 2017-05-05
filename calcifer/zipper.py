@@ -21,7 +21,7 @@ class Zipper(object):
     def root(self):
         new_zipper = self
         for _ in range(len(self.breadcrumbs)):
-            new_zipper = new_zipper.up()
+            new_zipper, _ = new_zipper.up()
         return new_zipper
 
     @property
@@ -53,7 +53,7 @@ class Zipper(object):
         empty_parent = first.from_node
         new_node = empty_parent.reconstruct(possible_steps)
 
-        return Zipper(rest, new_node)
+        return Zipper(rest, new_node), first.step_taken
 
 
 class Breadcrumb(object):
